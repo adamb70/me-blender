@@ -255,7 +255,7 @@ class UpdateDefinitionsFromBlockScene(bpy.types.Operator):
     settings_name = bpy.props.StringProperty(
         name="Used Settings",
         description="The name of the node-tree that defines the export",
-        default="MwmExport")
+        default="MwmExportMedieval")
 
     @classmethod
     def poll(self, context):
@@ -314,7 +314,7 @@ class UpdateDefinitionsFromBlockScene(bpy.types.Operator):
 
 class AddDefaultExportNodes(bpy.types.Operator):
     bl_idname = "export_scene.medieval_engineers_export_nodes"
-    bl_label = "Add Default Export-Settings"
+    bl_label = "Add Default Medieval Engineers Export-Settings"
     bl_description = "Creates a new exporter node-tree with default settings."
 
     @classmethod
@@ -328,7 +328,7 @@ class AddDefaultExportNodes(bpy.types.Operator):
         if context.space_data.type == 'NODE_EDITOR':
             tree = context.space_data.node_tree
         else:
-            tree = bpy.data.node_groups.new('MwmExport', BlockExportTree.bl_idname)
+            tree = bpy.data.node_groups.new('MwmExportMedieval', BlockExportTree.bl_idname)
 
         createDefaultTree(tree)
         tree.use_fake_user = True

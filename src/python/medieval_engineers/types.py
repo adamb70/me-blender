@@ -47,7 +47,7 @@ def getExportNodeTreeFromContext(context):
             if settings in bpy.data.node_groups:
                 tree = bpy.data.node_groups[settings]
 
-    if not tree is None and tree.bl_idname != "MEBlockExportTree":
+    if tree is not None and tree.bl_idname != "MEBlockExportTree":
         tree = None
 
     return tree
@@ -263,7 +263,7 @@ class MESceneProperties(bpy.types.PropertyGroup):
     small_subtypeid = bpy.props.StringProperty( name="Small Block SubtypeId",
         description="Provide the SubtypeId of the small size block or leave empty to use the default naming-scheme")
 
-    export_nodes = bpy.props.StringProperty( name="Export Node Tree", default="MwmExport",
+    export_nodes = bpy.props.StringProperty( name="Export Node Tree", default="MwmExportMedieval",
         description="Use the Node editor to create and change these settings.")
     export_path = bpy.props.StringProperty( name="Export Subpath", default="//Models", subtype='DIR_PATH',
         description="The directory this block is to exported to")
@@ -616,13 +616,20 @@ def upgradeToNodeMaterial(material: bpy.types.Material):
     createMaterialNodeTree(material.node_tree)
     matInfo = MEMaterialInfo(material)
 
-    matInfo.diffuseColorNode.outputs[0].default_value = rgba(matInfoBefore.diffuseColor)
-    matInfo.specularIntensityNode.outputs[0].default_value = matInfoBefore.specularIntensity
-    matInfo.specularPowerNode.outputs[0].default_value = matInfoBefore.specularPower
-    matInfo.parallaxHeightNode.outputs[0].default_value = matInfoBefore.parallaxHeight
-    matInfo.parallaxBackOffsetNode.outputs[0].default_value = matInfoBefore.parallaxBackOffset
-    matInfo.windScaleNode.outputs[0].default_value = matInfoBefore.windScale
-    matInfo.windFrequencyNode.outputs[0].default_value = matInfoBefore.windFrequency
+    if matInfo.diffuseColorNode:
+        matInfo.diffuseColorNode.outputs[0].default_value = rgba(matInfoBefore.diffuseColor)
+    if matInfo.specularIntensityNode:
+        matInfo.specularIntensityNode.outputs[0].default_value = matInfoBefore.specularIntensity
+    if matInfo.specularPowerNode:
+        matInfo.specularPowerNode.outputs[0].default_value = matInfoBefore.specularPower
+    if matInfo.parallaxHeightNode:
+        matInfo.parallaxHeightNode.outputs[0].default_value = matInfoBefore.parallaxHeight
+    if matInfo.parallaxBackOffsetNode:
+        matInfo.parallaxBackOffsetNode.outputs[0].default_value = matInfoBefore.parallaxBackOffset
+    if matInfo.windScaleNode:
+        matInfo.windScaleNode.outputs[0].default_value = matInfoBefore.windScale
+    if matInfo.windFrequencyNode:
+        matInfo.windFrequencyNode.outputs[0].default_value = matInfoBefore.windFrequency
 
     imagesToSet = {k : imageFromFilePath(v) for k, v in matInfoBefore.images.items()}
 
