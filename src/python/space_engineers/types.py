@@ -87,7 +87,7 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
     seDir = bpy.props.StringProperty(
         name="Game Directory",
         subtype='DIR_PATH',
-        description='The base directory of the game. Probably <Steam>\\SteamApps\\Common\\Space Engineers',
+        description='The base directory of the game. Probably <Steam>\\SteamApps\\Common\\Medieval Engineers',
     )
     mwmbuilder = bpy.props.StringProperty(
         name="MWM Builder",
@@ -121,8 +121,8 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
         layout = self.layout
 
         col = layout.column()
-        col.label(text="Space Engineers", icon="GAME")
-        col.alert = not check_path(self.seDir, isDirectory=True, subpathExists='Bin64/SpaceEngineers.exe')
+        col.label(text="Medieval Engineers", icon="GAME")
+        col.alert = not check_path(self.seDir, isDirectory=True, subpathExists='Bin64/MedievalEngineers.exe')
         col.prop(self, 'seDir')
 
         if not self.mwmbuilder and self.seDir:
@@ -225,7 +225,7 @@ class SESceneProperties(bpy.types.PropertyGroup):
     name = PROP_GROUP
     
     is_block = bpy.props.BoolProperty( default=False, name="Export as Block", 
-        description="Does this scene contain the models for a block in Space Engineers?")
+        description="Does this scene contain the models for a block in Medieval Engineers?")
 
     block_size =  bpy.props.EnumProperty( items=BLOCK_SIZE, default='SCALE_DOWN', name="Block Size")
     block_dimensions = bpy.props.IntVectorProperty( default=(1,1,1), min=1, description="Block Dimensions", subtype="TRANSLATION")
@@ -293,7 +293,7 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "scene"
-    bl_label = "Space Engineers Block"
+    bl_label = "Medieval Engineers Block"
 
     @classmethod
     def poll(cls, context):
@@ -365,7 +365,7 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
 class NODE_PT_spceng_nodes(bpy.types.Panel):
     bl_space_type = 'NODE_EDITOR'
     bl_region_type = 'UI'
-    bl_label = "Space Engineers Export"
+    bl_label = "Medieval Engineers Export"
 
     @classmethod
     def poll(cls, context):
@@ -389,7 +389,7 @@ class NODE_PT_spceng_nodes(bpy.types.Panel):
 class NODE_PT_spceng_nodes_mat(bpy.types.Panel):
     bl_space_type = 'NODE_EDITOR'
     bl_region_type = 'UI'
-    bl_label = "Space Engineers Material"
+    bl_label = "Medieval Engineers Material"
 
     @classmethod
     def poll(cls, context):
@@ -451,7 +451,7 @@ class DATA_PT_spceng_empty(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "data"
-    bl_label = "Space Engineers"
+    bl_label = "Medieval Engineers"
 
     @classmethod
     def poll(cls, context):
@@ -531,6 +531,8 @@ class SEMaterialProperties(bpy.types.PropertyGroup):
     diffuse_color = bpy.props.FloatVectorProperty( subtype="COLOR", default=(1.0, 1.0, 1.0), min=0.0, max=1.0, name="Diffuse Color", )
     specular_power = bpy.props.FloatProperty( min=0.0, name="Specular Power", description="per material specular power", )
     specular_intensity = bpy.props.FloatProperty( min=0.0, name="Specular Intensity", description="per material specular intensity", )
+    parallax_height = bpy.props.FloatProperty( min=0.0, name="Parallax Height", description="per material parallax height", )
+    parallax_back_offset = bpy.props.FloatProperty( min=0.0, name="Parallax Back Offset", description="per material parallax offset", )
 
     glass_material_ccw = bpy.props.StringProperty(
         name="Outward Facing Material", 
@@ -591,6 +593,8 @@ class SEMaterialInfo:
             self.diffuseColorNode = firstMatching(nodes, bpy.types.ShaderNodeRGB, "DiffuseColor")
             self.specularIntensityNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "SpecularIntensity")
             self.specularPowerNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "SpecularPower")
+            self.parallaxHeightNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "ParallaxHeight")
+            self.parallaxBackOffsetNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "ParallaxBackOffset")
         else:
             self.textureNodes = {}
             self.altTextureNodes = {}
@@ -599,6 +603,8 @@ class SEMaterialInfo:
             self.diffuseColorNode = None
             self.specularIntensityNode = None
             self.specularPowerNode = None
+            self.parallaxHeightNode = None
+            self.parallaxBackOffsetNode = None
 
         self.images = {t : n.image.filepath for t, n in self.textureNodes.items() if n.image and n.image.filepath}
         self.couldDefaultNormalTexture = False
@@ -614,6 +620,8 @@ class SEMaterialInfo:
         self.diffuseColor = tuple(c for c in val(self.diffuseColorNode)) if self.diffuseColorNode else d.diffuse_color
         self.specularIntensity = val(self.specularIntensityNode) if self.specularIntensityNode else d.specular_intensity
         self.specularPower = val(self.specularPowerNode) if self.specularPowerNode else d.specular_power
+        self.parallaxHeight = val(self.parallaxHeight) if self.parallaxHeightNode else d.parallax_height
+        self.parallaxBackOffset = val(self.parallaxBackOffset) if self.parallaxBackOffsetNode else d.parallax_back_offset
 
         alphamaskFilepath = self.images.get(TextureType.Alphamask, None)
         self.warnAlphaMask = bool(alphamaskFilepath and d.technique != 'ALPHAMASK')
@@ -661,6 +669,8 @@ def upgradeToNodeMaterial(material: bpy.types.Material):
     matInfo.diffuseColorNode.outputs[0].default_value = rgba(matInfoBefore.diffuseColor)
     matInfo.specularIntensityNode.outputs[0].default_value = matInfoBefore.specularIntensity
     matInfo.specularPowerNode.outputs[0].default_value = matInfoBefore.specularPower
+    matInfo.parallaxHeightNode.outputs[0].default_value = matInfoBefore.parallaxHeight
+    matInfo.parallaxBackOffsetNode.outputs[0].default_value = matInfoBefore.parallaxBackOffset
 
     imagesToSet = {k : imageFromFilePath(v) for k, v in matInfoBefore.images.items()}
 
@@ -681,7 +691,7 @@ class DATA_PT_spceng_material(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "material"
-    bl_label = "Space Engineers"
+    bl_label = "Medieval Engineers"
 
     @classmethod
     def poll(cls, context):
@@ -745,6 +755,19 @@ class DATA_PT_spceng_material(bpy.types.Panel):
             split.column().prop(matInfo.specularPowerNode.outputs[0], "default_value", text="Power")
         else:
             split.column().prop(d, "specular_power", text="Power")
+
+        split = layout.split(splitPercent)
+        split.label("Parallax")
+        split = split.split()
+        if matInfo.parallaxHeightNode:
+            split.column().prop(matInfo.parallaxHeightNode.outputs[0], "default_value", text="Height")
+        else:
+            split.column().prop(d, "parallax_height", text="Height")
+        if matInfo.parallaxBackOffsetNode:
+            split.column().prop(matInfo.parallaxBackOffsetNode.outputs[0], "default_value", text="Offset")
+        else:
+            split.column().prop(d, "parallax_back_offset", text="Offset")
+
 
         def image(texType: TextureType):
             if texType in matInfo.textureNodes:

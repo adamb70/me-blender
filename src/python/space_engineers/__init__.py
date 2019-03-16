@@ -1,13 +1,13 @@
 bl_info = {
     "name": "Block Tools",
-	"description": "Tools to construct in-game blocks for the game Space Engineers",
+	"description": "Tools to construct in-game blocks for the game Medieval Engineers",
 	"author": "Harag",
 	"version": (0, 7, 0),
     "blender": (2, 72, 0),
 	"location": "Properties > Scene, Material, Empty | Tools > Create | Node Editor",
 	"wiki_url": "http://harag-on-steam.github.io/se-blender/",
 	"tracker_url": "https://github.com/harag-on-steam/se-blender/issues",
-    "category": "Space Engineers",
+    "category": "Medieval Engineers",
 }
 
 # properly handle Blender F8 reload
@@ -51,7 +51,7 @@ class SEView3DToolsPanel(bpy.types.Panel):
     bl_region_type = 'TOOLS'
     bl_category = "Create"
     bl_context = "objectmode"
-    bl_label = "Space Engineers"
+    bl_label = "Medieval Engineers"
 
     @classmethod
     def poll(self, context):
@@ -79,9 +79,9 @@ class SEView3DToolsPanel(bpy.types.Panel):
 
 def menu_func_export(self, context):
     self.layout.operator(operators.ExportSceneAsBlock.bl_idname,
-                         text="Space Engineers Block (.mwm)")
+                         text="Medieval Engineers Block (.mwm)")
     self.layout.operator(operators.UpdateDefinitionsFromBlockScene.bl_idname,
-                         text="Space Engineers Definition Update (.sbc)")
+                         text="Medieval Engineers Definition Update (.sbc)")
 
 def register():
     from bpy.utils import register_class

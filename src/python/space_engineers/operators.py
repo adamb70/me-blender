@@ -130,7 +130,7 @@ class BlockExport:
 
 class ExportSceneAsBlock(bpy.types.Operator):
     bl_idname = "export_scene.space_engineers_block"
-    bl_label = "Export Space Engineers Block"
+    bl_label = "Export Medieval Engineers Block"
     bl_description = "Exports the current scene as a block. Hold ALT to export all scenes."
 
     directory = bpy.props.StringProperty(subtype='DIR_PATH')
@@ -527,9 +527,9 @@ class UpdateShadersAndNodesMaterials(bpy.types.Operator):
 
 class SetupMaterial(bpy.types.Operator):
     bl_idname = "material.spceng_material_setup"
-    bl_label = "Reset to Space Engineers Layout"
+    bl_label = "Reset to Medieval Engineers Layout"
     bl_icon = "NODETREE"
-    bl_description = "Add texture-image nodes as requried by Space Engineers. " \
+    bl_description = "Add texture-image nodes as requried by Medieval Engineers. " \
                      "Also add shader nodes that are wired to display those textures."
 
     @classmethod

@@ -57,6 +57,8 @@ def material_xml(settings, mat, file=None, node=None):
     param("Technique", _material_technique(d.technique))
     param("SpecularIntensity", _floatstr(m.specularIntensity))
     param("SpecularPower", _floatstr(m.specularPower))
+    param("ParallaxHeight", _floatstr(m.parallaxHeight))
+    param("ParallaxBackOffset", _floatstr(m.parallaxBackOffset))
 
     if 'GLASS' == d.technique:
         param("DiffuseColorX", '255')

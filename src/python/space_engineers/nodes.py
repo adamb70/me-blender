@@ -733,7 +733,7 @@ class NODE_MT_space_engineers_mwm_presets(bpy.types.Menu):
     bl_label = "Exporter Presets"
     bl_description = "Load all the settings below from a saved preset"
 
-    preset_subdir = "space_engineers/mwm_exporter"
+    preset_subdir = "medieval_engineers/mwm_exporter"
     preset_operator = "script.execute_preset"
 
     def draw(self, context):
