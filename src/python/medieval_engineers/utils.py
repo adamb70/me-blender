@@ -340,7 +340,7 @@ def scene():
     s = getattr(currentSceneHolder, "scene", None)
     return s if s else bpy.context.scene
 
-PROP_GROUP = "space_engineers"
+PROP_GROUP = "medieval_engineers"
 
 def data(obj):
     # avoids AttributeError

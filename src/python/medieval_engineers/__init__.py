@@ -3,7 +3,7 @@ bl_info = {
 	"description": "Tools to construct in-game blocks for the game Medieval Engineers",
 	"author": "Harag",
 	"version": (1, 0, 0),
-    "blender": (2, 72, 0),
+    "blender": (2, 79, 0),
 	"location": "Properties > Scene, Material, Empty | Tools > Create | Node Editor",
 	"wiki_url": "http://harag-on-steam.github.io/se-blender/",
 	"tracker_url": "https://github.com/harag-on-steam/se-blender/issues",
@@ -23,7 +23,6 @@ def reload(module_name):
         return False
 
 if not reload('utils'): from . import utils
-if not reload('mirroring'): from . import mirroring
 if not reload('texture_files'): from . import texture_files
 if not reload('pbr_node_group'): from . import pbr_node_group
 if not reload('types'): from . import types
@@ -69,7 +68,6 @@ class SEView3DToolsPanel(bpy.types.Panel):
             col.operator(operators.SetupGrid.bl_idname, icon='GRID')
 
         col.operator(operators.AddMountPointSkeleton.bl_idname, icon='FACESEL')
-        col.operator(operators.AddMirroringEmpties.bl_idname, icon='MOD_MIRROR')
 
         if not data.is_block:
             col.separator()
@@ -93,10 +91,9 @@ def register():
     register_class(types.SEObjectProperties)
     register_class(types.SEMaterialProperties)
    
-    bpy.types.Object.space_engineers = bpy.props.PointerProperty(type=types.SEObjectProperties)
-    bpy.types.Object.space_engineers_mirroring = mirroring.mirroringProperty
-    bpy.types.Scene.space_engineers = bpy.props.PointerProperty(type=types.SESceneProperties)
-    bpy.types.Material.space_engineers = bpy.props.PointerProperty(type=types.SEMaterialProperties)
+    bpy.types.Object.medieval_engineers = bpy.props.PointerProperty(type=types.SEObjectProperties)
+    bpy.types.Scene.medieval_engineers = bpy.props.PointerProperty(type=types.SESceneProperties)
+    bpy.types.Material.medieval_engineers = bpy.props.PointerProperty(type=types.SEMaterialProperties)
 
     register_class(types.NODE_PT_spceng_nodes)
     register_class(types.NODE_PT_spceng_nodes_mat)
@@ -142,10 +139,9 @@ def unregister():
     unregister_class(types.NODE_PT_spceng_nodes_mat)
     unregister_class(types.NODE_PT_spceng_nodes)
 
-    del bpy.types.Material.space_engineers
-    del bpy.types.Object.space_engineers
-    del bpy.types.Object.space_engineers_mirroring
-    del bpy.types.Scene.space_engineers
+    del bpy.types.Material.medieval_engineers
+    del bpy.types.Object.medieval_engineers
+    del bpy.types.Scene.medieval_engineers
     
     unregister_class(types.SEMaterialProperties)
     unregister_class(types.SEObjectProperties)

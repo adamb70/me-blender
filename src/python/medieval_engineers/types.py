@@ -4,7 +4,6 @@ import bpy
 import os
 import requests
 from mathutils import Vector
-from .mirroring import mirroringAxisFromObjectName
 from .pbr_node_group import firstMatching, createMaterialNodeTree, createDx11ShaderGroup, getDx11Shader, \
     getDx11ShaderGroup, getDx9ShaderGroup
 from .utils import data
@@ -13,7 +12,7 @@ from .texture_files import TextureType, textureFileNameFromPath, _RE_DIFFUSE, \
 from .versions import versionsOnGitHub, Version
 from .utils import BoundingBox, layers, layer_bits, check_path, scene
 
-PROP_GROUP = "space_engineers"
+PROP_GROUP = "medieval_engineers"
 
 def data(obj):
     # avoids AttributeError
@@ -72,7 +71,7 @@ latestRelease = None
 latestPreRelease = None
 
 def version_icon(v: Version) -> str:
-    import space_engineers as addon
+    import medieval_engineers as addon
     if not v:
         return 'NONE'
     if v == latestRelease:
@@ -182,7 +181,7 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
         row = split.row()
         row.alignment = 'RIGHT'
 
-        import space_engineers as addon
+        import medieval_engineers as addon
         if addon.version.prerelease:
             row.label(icon='INFO', text="You are using a pre-release.")
 
@@ -269,9 +268,6 @@ class SESceneProperties(bpy.types.PropertyGroup):
     export_path = bpy.props.StringProperty( name="Export Subpath", default="//Models", subtype='DIR_PATH',
         description="The directory this block is to exported to")
 
-    mirroring_block = bpy.props.StringProperty( name="Mirroring Block", default="",
-        description="The block that the game should switch to if this block is mirrored")
-
     # too bad https://developer.blender.org/D113 never made it into Blender
     def getExportNodeTree(self):
         if not self.export_nodes:
@@ -280,18 +276,6 @@ class SESceneProperties(bpy.types.PropertyGroup):
         if nodeTree is None:
             raise ValueError('scene references a non-existing export node-tree')
         return nodeTree
-
-    def getMirroringBlock(self):
-        if not self.mirroring_block:
-            return None
-        mirrorScene = bpy.data.scenes.get(self.mirroring_block, None)
-        if mirrorScene is None:
-            raise ValueError(
-                "scene '%s' references a non-existing mirroring block '%s'" %
-                (self.scene.name, self.mirroring_block))
-        if mirrorScene == self.scene:
-            return None
-        return data(mirrorScene)
 
     @property
     def scene(self) -> bpy.types.Scene:
@@ -350,9 +334,6 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
         split = col.split()
         split.column().prop(spceng, "block_specular_power", text="Power")
         split.column().prop(spceng, "block_specular_shininess", text="Shininess")
-
-        layout.separator()
-        layout.prop_search(spceng, "mirroring_block", bpy.data, "scenes", text="Mirroring Block")
 
         layout.separator()
 
@@ -472,19 +453,8 @@ class DATA_PT_spceng_empty(bpy.types.Panel):
     def draw(self, context):
         ob = context.object
         d = data(ob)
-        isMirror = not mirroringAxisFromObjectName(context.active_object) is None
 
         layout = self.layout
-
-        row = layout.row()
-        row.enabled = not isMirror
-        if context.object.name.lower().startswith("subpart_") and not d.file:
-            row.alert = True
-        row.prop(d, "file", text="Link to File", icon='LIBRARY_DATA_DIRECT')
-
-        row = layout.row()
-        row.enabled = isMirror
-        row.prop(context.object, "space_engineers_mirroring", icon="MOD_MIRROR" if not isMirror else 'NONE')
 
         isVolumetric = ob.empty_draw_type == 'CUBE' and ob.empty_draw_size == 0.5
 

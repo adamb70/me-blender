@@ -5,7 +5,6 @@ from tempfile import TemporaryDirectory
 import bpy
 from bpy.utils import register_class, unregister_class
 from .export import ExportSettings, MissbehavingToolError
-from .mirroring import setupMirrors
 from .merge_xml import CubeBlocksMerger, MergeResult
 from .mount_points import create_mount_point_skeleton
 from .pbr_node_group import getDx11Shader, createDx11ShaderGroup
@@ -347,7 +346,7 @@ class NameLayersFromExportNodes(bpy.types.Operator):
         return getattr(context.scene, "namedlayers", None) is not None
 
     def execute(self, context):
-        nodeTree = context.scene.space_engineers.getExportNodeTree()
+        nodeTree = context.scene.medieval_engineers.getExportNodeTree()
         namedLayers = context.scene.namedlayers.layers
 
         def layer_indices(layers):
@@ -363,45 +362,6 @@ class NameLayersFromExportNodes(bpy.types.Operator):
             elif isinstance(n, SeparateLayerObjectsNode):
                 for i, li in enumerate(layer_indices(n.layer_mask)):
                     namedLayers[li].name = "%s %d" % (node_label(n), i+1)
-
-        return {'FINISHED'}
-
-class AddMirroringEmpties(bpy.types.Operator):
-    bl_idname = "object.space_engineers_mirrors"
-    bl_label = "Block Mirroring"
-    bl_description = "Creates or rebuilds empties to model the block-mirroring. " \
-                     "Rotate those empties to configure the mirroring for the corresponding axes."
-
-    @classmethod
-    def poll(self, context):
-        return True
-
-    def execute(self, context):
-        blockData = sceneData(context.scene)
-        isSmall = blockData.block_size == 'SMALL'
-
-        try:
-            blockDef = getBlockDef(blockData.getExportNodeTree())
-            layer = blockDef.getMirroringLayer()
-
-            mirrorData = blockData.getMirroringBlock()
-            if not mirrorData is None:
-                with PinnedScene(mirrorData.scene):
-                    mirrorBlockDef = getBlockDef(mirrorData.getExportNodeTree())
-                    mainObjects = mirrorBlockDef.getMainObjects()
-            else:
-                mainObjects = blockDef.getMainObjects()
-
-        except ValueError as e:
-            self.report({'ERROR'}, "Invalid export settings: " + str(e))
-            return {'FINISHED'}
-
-        setupMirrors(context.scene, mainObjects, blockData.block_dimensions, isSmall, layer)
-
-        if layer >= 0:
-            context.scene.layers = layers(layer_bits(context.scene.layers) | layer_bit(layer))
-        else:
-            self.report({'WARNING'}, "No mirroring layer defined. Objects were created on active layer.")
 
         return {'FINISHED'}
 
@@ -548,7 +508,6 @@ class SetupMaterial(bpy.types.Operator):
 
 registered = [
     AddDefaultExportNodes,
-    AddMirroringEmpties,
     ConfigureEmptyAsVolumeHandle,
     ExportSceneAsBlock,
     UpdateDefinitionsFromBlockScene,

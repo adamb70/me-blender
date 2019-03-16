@@ -305,8 +305,7 @@ class XmlEditor:
 BLOCK_ELEMENTS = [
     'Id', 'DisplayName', 'Icon', 'CubeSize', 'BlockTopology', 'Size', 'ModelOffset', 'Model', 'UseModelIntersection',
     'Components', 'CriticalComponent', 'BuildProgressModels', 'MountPoints', 'BlockPairName',
-    'MirroringBlock', 'MirroringX', 'MirroringY', 'MirroringZ', 'DeformationRatio', 'EdgeType',
-    'BuildTimeSeconds', 'DisassembleRatio', 'Public',
+    'DeformationRatio', 'EdgeType', 'BuildTimeSeconds', 'DisassembleRatio', 'Public',
 ]
 
 ID_ELEMENTS = ['TypeId', 'SubtypeId']

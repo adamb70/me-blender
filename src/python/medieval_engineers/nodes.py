@@ -8,7 +8,6 @@ from subprocess import CalledProcessError
 from string import Template
 from bpy.props import BoolProperty, EnumProperty, FloatProperty, StringProperty
 from bpy_extras.io_utils import path_reference_mode, orientation_helper_factory
-from .mirroring import mirroringAxisFromObjectName
 from .texture_files import TextureType
 from .types import sceneData, data, SEMaterialInfo
 from .utils import layer_bits, layer_bit, scene, first, PinnedScene, reportMessage, exportSettings
@@ -391,15 +390,6 @@ class MountPointObjectsSocket(bpy.types.NodeSocket, ObjectsSocket):
     def getObjects(self, socket: bpy.types.NodeSocket=None):
         return (o for o in super().getObjects(socket) if 'MountPoint' in o.material_slots)
 
-class MirroringObjectsSocket(bpy.types.NodeSocket, ObjectsSocket):
-    '''selects only objects that are name 'Mirror(ing)...' '''
-    bl_idname = "SEMirroringObjectsSocket"
-    bl_label = "Objects"
-    bl_color = COLOR_OBJECTS_SKT
-    type = 'CUSTOM'
-
-    def getObjects(self, socket: bpy.types.NodeSocket=None):
-        return (o for o in super().getObjects(socket) if not mirroringAxisFromObjectName(o) is None)
 
 # -------------------------------------------------------------------------------------------------------------------- #
 
@@ -1153,7 +1143,6 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradab
         icon = inputs.new(TemplateStringSocket.bl_idname, "Icon Path")
         icon.text = "//Textures/Icons/${BlockPairName}"
         inputs.new(MountPointObjectsSocket.bl_idname, "Mount Points")
-        inputs.new(MirroringObjectsSocket.bl_idname, "Mirroring")
 
         for i in range(1,11):
             inputs.new(MwmFileSocket.bl_idname, "Constr. Phase %d" % (i))
@@ -1169,11 +1158,6 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradab
             icon = inputs.new(TemplateStringSocket.bl_idname, "Icon Path")
             icon.text = "//Textures/Icons/${BlockPairName}"
             inputs.move(len(inputs)-1, 1)
-
-        # new in v0.5.0
-        if inputs.get('Mirroring', None) is None:
-            inputs.new(MirroringObjectsSocket.bl_idname, "Mirroring")
-            inputs.move(len(inputs)-1, 3)
 
     def update(self):
         pins = [p for p in self.inputs.values() if p.name.startswith('Constr')]
@@ -1229,8 +1213,6 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradab
         if mountPointsSocket.is_linked and mountPointsSocket.isEmpty():
             settings.text("no mount-points included", file=blockdeffile, node=self)
 
-        mirroringSocket = self.inputs['Mirroring']
-
         constrModelFiles = [] # maybe stays empty
         for i, socket in enumerate(s for s in self.inputs if s.name.startswith('Constr')):
             if socket.enabled and socket.is_linked:
@@ -1240,15 +1222,11 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradab
                 else:
                     settings.text("socket '%s' not ready, skipped" % (socket.name), file=blockdeffile, node=self)
 
-        mirrorSettings = settings.mirrorSettings()
-
         xml = generateBlockDefXml(
             settings,
             modelFile,
             iconFile,
             mountPointsSocket.getObjects(),
-            mirroringSocket.getObjects(),
-            mirrorSettings.SubtypeId if mirrorSettings else None,
             constrModelFiles)
 
         return settings.cacheValue(blockdeffilecontent, xml)
@@ -1271,9 +1249,6 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradab
 
     def getMountPointLayer(self):
         return self._getLayer(self.inputs['Mount Points'])
-
-    def getMirroringLayer(self):
-        return self._getLayer(self.inputs['Mirroring'])
 
 # -------------------------------------------------------------------------------------------------------------------- #
 
@@ -1345,7 +1320,6 @@ registered = [
     RigidBodyObjectsSocket,
     ExportableObjectsSocket,
     MountPointObjectsSocket,
-    MirroringObjectsSocket,
 
     LayerObjectsNode,
     SeparateLayerObjectsNode,

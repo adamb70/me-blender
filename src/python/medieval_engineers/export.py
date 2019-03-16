@@ -11,7 +11,6 @@ import shutil
 from mathutils import Matrix
 
 from .mount_points import mount_point_definitions, mount_points_xml
-from .mirroring import mirroringAxisFromObjectName
 from .utils import scaleUni, md5sum
 from .types import data, prefs, getBaseDir, SESceneProperties
 from .fbx import save_single
@@ -24,8 +23,6 @@ class StdoutOperator():
 
 STDOUT_OPERATOR = StdoutOperator()
 
-# mwmbuilder from Space Engineers 01.051
-OLD_MWMBUILDER_MD5 = '261163f6d3743d28fede7944b2b0949a'
 
 class MissbehavingToolError(subprocess.SubprocessError):
     def __init__(self, message: str):
@@ -36,7 +33,7 @@ class MissbehavingToolError(subprocess.SubprocessError):
 
 def tool_path(propertyName, displayName, toolPath=None):
     if None == toolPath:
-        toolPath = getattr(bpy.context.user_preferences.addons['space_engineers'].preferences, propertyName)
+        toolPath = getattr(bpy.context.user_preferences.addons['medieval_engineers'].preferences, propertyName)
 
     if not toolPath:
         raise FileNotFoundError("%s is not configured", (displayName))
@@ -117,7 +114,6 @@ class ExportSettings:
         self.names = Names()
         self.isUseTangentSpace = False
         # set on first access, see properties below
-        self._isOldMwmbuilder = None
         self._fbximporter = None
         self._havokfilter = None
         self._mwmbuilder = None
@@ -140,16 +136,6 @@ class ExportSettings:
         self.SubtypeId = None # corresponds with element-name in CubeBlocks.sbc
 
         self.cache = {}
-
-    def mirrorSettings(self):
-        mirrorSceneData = self.sceneData.getMirroringBlock()
-        if mirrorSceneData is None:
-            return None
-
-        mirrorSettings = ExportSettings(mirrorSceneData.scene, self.outputDir)
-        mirrorSettings.CubeSize = self.CubeSize
-        mirrorSettings.scaleDown = self.scaleDown
-        return mirrorSettings
 
     @property
     def CubeSize(self):
@@ -179,12 +165,6 @@ class ExportSettings:
     @property
     def blocksize(self): # legacy, read-only
         return self.CubeSize
-
-    @property
-    def isOldMwmbuilder(self):
-        if self._isOldMwmbuilder is None:
-            self._isOldMwmbuilder = False # (OLD_MWMBUILDER_MD5 == md5sum(self.mwmbuilder))
-        return self._isOldMwmbuilder
 
     @property
     def fbximporter(self):
@@ -393,8 +373,6 @@ def generateBlockDefXml(
         modelFile: str,
         iconFile: str,
         mountPointObjects: iter,
-        mirroringObjects: iter,
-        mirroringBlockSubtypeId: str,
         constrModelFiles: iter):
 
     d = data(settings.scene)
@@ -445,24 +423,6 @@ def generateBlockDefXml(
     mountpoints = mount_point_definitions(mountPointObjects)
     if len(mountpoints) > 0:
         block.append(mount_points_xml(mountpoints))
-
-    if mirroringBlockSubtypeId is not None:
-        mirroringBlock = ElementTree.SubElement(block, "MirroringBlock")
-        mirroringBlock.text = mirroringBlockSubtypeId
-
-    mirroring = {}
-    for o in mirroringObjects:
-        axis = mirroringAxisFromObjectName(o)
-        if not mirroring.get(axis, None):
-            enum = o.space_engineers_mirroring
-            if not enum in {'Unsupported', 'NonRectangular'}:
-                mirroring[axis] = enum
-            else:
-                settings.warn("Mirroring%s defined by object %s is '%s'. Reset to 'None'." % (axis, o.name, enum))
-    if len(mirroring) > 0:
-        for axis in ('X','Y','Z'):
-            mirroringElem = ElementTree.SubElement(block, 'Mirroring'+axis)
-            mirroringElem.text = mirroring.get(axis, 'None')
 
     blockPairName = ElementTree.SubElement(block, 'BlockPairName')
     blockPairName.text = settings.BlockPairName

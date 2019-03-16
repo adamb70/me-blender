@@ -10,7 +10,7 @@ import re
 BAD_PATH = re.compile(r"^(?:[A-Za-z]:|\.\.)?[\\/]")
 
 def se_content_dir(settings):
-    se_dir = bpy.path.abspath(bpy.context.user_preferences.addons['space_engineers'].preferences.seDir)
+    se_dir = bpy.path.abspath(bpy.context.user_preferences.addons['medieval_engineers'].preferences.seDir)
     if not se_dir:
         return settings.baseDir # fallback, if unset
     return os.path.join(os.path.normpath(se_dir), "Content")
@@ -82,7 +82,7 @@ def material_xml(settings, mat, file=None, node=None):
         filepath = m.images.get(texType, None)
         
         if filepath is None:
-            xmlrefpath = bpy.path.abspath(bpy.context.user_preferences.addons['space_engineers'].preferences.materialref)
+            xmlrefpath = bpy.path.abspath(bpy.context.user_preferences.addons['medieval_engineers'].preferences.materialref)
             if not xmlrefpath:  # don't want it failing if we don't have a file assigned
                 xmlrefpath = None
                 
