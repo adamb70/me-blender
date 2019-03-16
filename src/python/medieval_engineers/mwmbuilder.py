@@ -55,11 +55,17 @@ def material_xml(settings, mat, file=None, node=None):
         if value:
             se.text = value
 
+    def param_if_not_zero(label, value):
+        if float(value) != 0.0:
+            param(label, value)
+
     param("Technique", _material_technique(d.technique))
     param("SpecularIntensity", _floatstr(m.specularIntensity))
     param("SpecularPower", _floatstr(m.specularPower))
-    param("ParallaxHeight", _floatstr(m.parallaxHeight))
-    param("ParallaxBackOffset", _floatstr(m.parallaxBackOffset))
+    param_if_not_zero("ParallaxHeight", _floatstr(m.parallaxHeight))
+    param_if_not_zero("ParallaxBackOffset", _floatstr(m.parallaxBackOffset))
+    param_if_not_zero("WindScale", _floatstr(m.windScale))
+    param_if_not_zero("WindFrequency", _floatstr(m.windFrequency))
 
     if 'GLASS' == d.technique:
         param("DiffuseColorX", '255')
@@ -95,16 +101,13 @@ def material_xml(settings, mat, file=None, node=None):
                     if not refmatpath is None:
                         filepath = refmatpath.text
         
-        if not filepath is None:
+        if filepath is not None:
             derivedPath = derive_texture_path(settings, filepath)
             if (BAD_PATH.search(derivedPath)):
                 settings.error("The %s texture of material '%s' exports with the non-portable path: '%s'. "
                                "Consult the documentation on texture-paths."
                                % (texType.name, mat.name, derivedPath), file=file, node=node)
             param(texType.name + "Texture", derivedPath)
-        else:
-            #material_reference(mat, m)
-            e.append(ElementTree.Comment("material has no %sTexture" % texType.name))
 
     return e
 

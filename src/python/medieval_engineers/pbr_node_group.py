@@ -222,8 +222,7 @@ class ShaderNodesBuilder:
         if not default is None: input.default_value = default
         return input
 
-DX11_NAME = 'SpaceEngineers_DX11_Shader_2'
-DX9_NAME = 'SpaceEngineers_DX9_Shader'
+DX11_NAME = 'MedievalEngineers_DX11'
 
 def createDx11ShaderGroup():
     pbr = firstMatching(bpy.data.node_groups, bpy.types.ShaderNodeTree, DX11_NAME)
@@ -584,45 +583,6 @@ def createDx11ShaderGroup():
 
     pbr.use_fake_user = True
 
-def createDx9ShaderGroup():
-    pbr = firstMatching(bpy.data.node_groups, bpy.types.ShaderNodeTree, DX9_NAME)
-    if not pbr:
-        pbr = bpy.data.node_groups.new(DX9_NAME, blId(bpy.types.ShaderNodeTree))
-    builder = ShaderNodesBuilder(pbr, defaultCreate=CreateMode.REUSE)
-
-    # ------------------------------------------------------------------------------------------------------------#
-    # input and output sockets of the node-group
-
-    socketSpecs = [
-        # DiffuseTexture
-        SocketSpec(bpy.types.NodeSocketColor,         "Diffuse", (0.8, 0.8, 0.8, 1.0)),
-        SocketSpec(bpy.types.NodeSocketFloatUnsigned, "Emissive", 1.0, 0.0, 1.0), # SE considers 1.0 as "not emissive"
-        # NormalTexture
-        SocketSpec(bpy.types.NodeSocketColor,         "Normal Map", (0.5, 0.5, 1.0, 1.0)), # straight up
-        SocketSpec(bpy.types.NodeSocketFloatUnsigned, "Specularity", 0.0, 0.0, 1.0),
-        # static values
-        SocketSpec(bpy.types.NodeSocketColor,         "Uniform Color",      (1, 1, 1, 1)),
-        SocketSpec(bpy.types.NodeSocketFloatUnsigned, "Specular Intensity", 0.0, 0.0, 1000.0),
-        SocketSpec(bpy.types.NodeSocketFloatUnsigned, "Specular Power",     0.0, 0.0, 1000.0),
-    ]
-    diffuse, emissivity, normalMap, specularity, uniColor, specInt, specPow = \
-        builder.newTreeSockets(socketSpecs, False, (-400, 0))
-
-    socketSpecs = [
-        SocketSpec(bpy.types.NodeSocketShader, "Surface")
-    ]
-    shader = builder.newTreeSockets(socketSpecs, True, (200, 0))[0]
-
-    # ------------------------------------------------------------------------------------------------------------#
-
-    normal = builder.newNormalMap("NormalMap", None, (-200, -200), NormalSpace.TANGENT, None, None, normalMap)
-
-    diffuseColor = builder.newDiffuse(None, "Diffuse Color", (-200, 0), diffuse, 0.0, normal)
-
-    builder.connectSockets([(diffuseColor, shader)])
-    pbr.use_fake_user = True
-
-
 def getDx11Shader(create=True):
     nodeTrees = (tree for tree in bpy.data.node_groups if tree.name.startswith(DX11_NAME))
     try:
@@ -633,21 +593,8 @@ def getDx11Shader(create=True):
         createDx11ShaderGroup()
         return getDx11Shader()
 
-def getDx9Shader(create=True):
-    nodeTrees = (tree for tree in bpy.data.node_groups if tree.name.startswith(DX9_NAME))
-    try:
-        return max(nodeTrees, key=lambda t: t.name) # get the latest version
-    except ValueError:
-        if not create:
-            return None
-        createDx9ShaderGroup()
-        return getDx9Shader()
-
 def getDx11ShaderGroup(tree: bpy.types.ShaderNodeTree):
     return firstMatching(tree.nodes, bpy.types.ShaderNodeGroup, "DX11Shader")
-
-def getDx9ShaderGroup(tree: bpy.types.ShaderNodeTree):
-    return firstMatching(tree.nodes, bpy.types.ShaderNodeGroup, "DX9Shader")
 
 def createMaterialNodeTree(tree: bpy.types.ShaderNodeTree):
     builder = ShaderNodesBuilder(tree, defaultCreate=CreateMode.REUSE)
@@ -687,38 +634,8 @@ def createMaterialNodeTree(tree: bpy.types.ShaderNodeTree):
         n.width_hidden = 100
     dx11.parent = frameDx11
 
-    deC, _  = builder.newImageTexture(None, label1(TextureType.Diffuse), (-200, -100), ImageColorspace.COLOR)
-    _, deA  = builder.newImageTexture(None, label2(TextureType.Diffuse), (-200, -150), ImageColorspace.COLOR)
-    nsC, _  = builder.newImageTexture(None, label1(TextureType.Normal),  (-200, -200), ImageColorspace.NONE)
-    _, nsA  = builder.newImageTexture(None, label2(TextureType.Normal),  (-200, -250), ImageColorspace.NONE)
-
-    uniColor = builder.newRgbValue  (None, "Diffuse Color",      (-200, -300), (1,1,1,1))
-    specInt  = builder.newFloatValue(None, "Specular Intensity", (   0, -300), 0.0)
-    specPow  = builder.newFloatValue(None, "Specular Power",     (   0, -400), 0.0)
-
-    dx9 = builder.newNode(bpy.types.ShaderNodeGroup, "DX9Shader", None, (250, -50), create=CreateMode.REPLACE)
-    dx9.node_tree = getDx9Shader()
-    builder.connectSockets(pair for pair in zip(
-        [deC, deA, nsC, nsA, uniColor, specInt, specPow],
-        dx9.inputs[0:7]))
-    dx9.width = 207
-
-    frameDx9 = builder.newNode(bpy.types.NodeFrame, "DX9Frame", 'DirectX 9 Textures')
-    frameDx9.color = (0.67, 0.67, 0.39)
-    frameDx9.use_custom_color = True
-    frameDx9.shrink = True
-    frameDx9.label_size = 25
-    for n in (deC.node, deA.node, nsC.node, nsA.node):
-        n.parent = frameDx9
-        n.hide = True
-        n.width_hidden = 100
-    for n in (uniColor.node, specInt.node, specPow.node, dx9):
-        n.parent = frameDx9
-
-    shaderToggle = builder.newMix(None, "Shader Toggle", (600, 150), 0.0, dx11.outputs[0], dx9.outputs[0])
-
-    out = builder.newNode(bpy.types.ShaderNodeOutputMaterial, None, None, (800, 150))
-    builder.connectSockets([(shaderToggle, out.inputs[0])])
+    out = builder.newNode(bpy.types.ShaderNodeOutputMaterial, None, None, (600, 600))
+    builder.connectSockets([(dx11.outputs[0], out.inputs[0])])
 
     # there might be a single leftover Diffuse shader from Blender's default material layout
     # remove it if it isn't connected to anything

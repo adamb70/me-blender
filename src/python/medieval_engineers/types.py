@@ -5,7 +5,7 @@ import os
 import requests
 from mathutils import Vector
 from .pbr_node_group import firstMatching, createMaterialNodeTree, createDx11ShaderGroup, getDx11Shader, \
-    getDx11ShaderGroup, getDx9ShaderGroup
+    getDx11ShaderGroup
 from .utils import data
 from .texture_files import TextureType, textureFileNameFromPath, _RE_DIFFUSE, \
     matchingFileNamesFromFilePath, imageFromFilePath, imageNodes
@@ -481,7 +481,8 @@ MATERIAL_TECHNIQUES = [
     ('GLASS', 'Glass Material', 'The material references glass settings in TransparentMaterials.sbc'),
     # 'ALPHAMASK' is missspelled. But it's already in use so fix it on export in .mwmbuilder._material_technique()
     ('ALPHAMASK', 'Alpha-Mask Material', 'The material uses a cut-off mask for completely transparent parts of the surface'),
-    ('DECAL', 'Decal Material', 'The material uses a cut-off mask for completely transparent parts of the surface')
+    ('DECAL', 'Decal Material', 'The material uses a cut-off mask for completely transparent parts of the surface'),
+    ('FOLIAGE', 'Foliage Material', 'The material uses a cut-off mask for completely transparent parts of the surface'),
     # there are even more techniques, see VRage.Import.MyMeshDrawTechnique
 ]
 
@@ -497,11 +498,6 @@ DX11_TEXTURE_ENUM = [
     _texEnum(TextureType.Alphamask,   4, 'MATCAP_24'),
 ]
 
-DX9_TEXTURE_SET = {TextureType.Diffuse, TextureType.Normal}
-DX9_TEXTURE_ENUM = [
-    _texEnum(TextureType.Normal,      1, 'MATCAP_04'),
-    _texEnum(TextureType.NormalGloss, 2, 'MATCAP_23'),
-]
 
 class SEMaterialProperties(bpy.types.PropertyGroup):
     name = PROP_GROUP
@@ -515,6 +511,8 @@ class SEMaterialProperties(bpy.types.PropertyGroup):
     specular_intensity = bpy.props.FloatProperty( min=0.0, name="Specular Intensity", description="per material specular intensity", )
     parallax_height = bpy.props.FloatProperty( min=0.0, name="Parallax Height", description="per material parallax height", )
     parallax_back_offset = bpy.props.FloatProperty( min=0.0, name="Parallax Back Offset", description="per material parallax offset", )
+    wind_scale = bpy.props.FloatProperty( min=0.0, name="Wind Scale", description="per material wind scale", )
+    wind_frequency = bpy.props.FloatProperty( min=0.0, name="Wind Frequency", description="per material wind frequency", )
 
     glass_material_ccw = bpy.props.StringProperty(
         name="Outward Facing Material", 
@@ -526,40 +524,6 @@ class SEMaterialProperties(bpy.types.PropertyGroup):
     )
     glass_smooth = bpy.props.BoolProperty(name="Smooth Glass", description="Should the faces of the glass be shaded smooth?")
 
-    def getDxToggle(self):
-        if not self.id_data:
-            return None
-        if not self.id_data.node_tree:
-            return None
-        return firstMatching(self.id_data.node_tree.nodes, bpy.types.ShaderNodeMixShader, "ShaderToggle")
-
-    def getDx9(self):
-        toggle = self.getDxToggle()
-        return True if toggle and 1.0 == toggle.inputs[0].default_value else False
-
-    def setDx9(self, value):
-        toggle = self.getDxToggle()
-        if toggle:
-            toggle.inputs[0].default_value = 1.0 if value else 0.0
-
-    display_dx9 = bpy.props.BoolProperty(
-        default=True, get=getDx9, set=setDx9,
-        description="Should the material display DirectX9 textures?"
-    )
-
-    def getDx11(self):
-        toggle = self.getDxToggle()
-        return True if toggle and 0.0 == toggle.inputs[0].default_value else False
-
-    def setDx11(self, value):
-        self.setDx9(not value)
-
-    display_dx11 = bpy.props.BoolProperty(
-        default=True, get=getDx11, set=setDx11,
-        description="Should the material display DirectX11 textures?"
-    )
-
-    # texture paths are derived from the material textures
 
 class SEMaterialInfo:
     def __init__(self, material: bpy.types.Material):
@@ -571,22 +535,24 @@ class SEMaterialInfo:
             self.textureNodes = imageNodes(nodes)
             self.altTextureNodes = imageNodes(nodes, alt=True)
             self.dx11Shader = getDx11ShaderGroup(tree)
-            self.dx9Shader = getDx9ShaderGroup(tree)
             self.diffuseColorNode = firstMatching(nodes, bpy.types.ShaderNodeRGB, "DiffuseColor")
             self.specularIntensityNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "SpecularIntensity")
             self.specularPowerNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "SpecularPower")
             self.parallaxHeightNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "ParallaxHeight")
             self.parallaxBackOffsetNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "ParallaxBackOffset")
+            self.windScaleNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "WindScale")
+            self.windFrequencyNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "WindFrequency")
         else:
             self.textureNodes = {}
             self.altTextureNodes = {}
             self.dx11Shader = None
-            self.dx9Shader = None
             self.diffuseColorNode = None
             self.specularIntensityNode = None
             self.specularPowerNode = None
             self.parallaxHeightNode = None
             self.parallaxBackOffsetNode = None
+            self.windScaleNode = None
+            self.windFrequencyNode = None
 
         self.images = {t : n.image.filepath for t, n in self.textureNodes.items() if n.image and n.image.filepath}
         self.couldDefaultNormalTexture = False
@@ -604,9 +570,11 @@ class SEMaterialInfo:
         self.specularPower = val(self.specularPowerNode) if self.specularPowerNode else d.specular_power
         self.parallaxHeight = val(self.parallaxHeight) if self.parallaxHeightNode else d.parallax_height
         self.parallaxBackOffset = val(self.parallaxBackOffset) if self.parallaxBackOffsetNode else d.parallax_back_offset
+        self.windScale = val(self.windScale) if self.windScaleNode else d.wind_scale
+        self.windFrequency = val(self.windFrequency) if self.windFrequencyNode else d.wind_frequency
 
         alphamaskFilepath = self.images.get(TextureType.Alphamask, None)
-        self.warnAlphaMask = bool(alphamaskFilepath and d.technique != 'ALPHAMASK' and d.technique != 'DECAL')
+        self.warnAlphaMask = bool(alphamaskFilepath and d.technique not in ('ALPHAMASK', 'DECAL', 'FOLIAGE'))
         self.shouldUseNodes = not self.isOldMaterial and not material.use_nodes
 
     def _imagesFromLegacyMaterial(self):
@@ -642,7 +610,7 @@ def upgradeToNodeMaterial(material: bpy.types.Material):
     # the material might not have a node_tree, yet
     if material.node_tree is None and not material.use_nodes:
         material.use_nodes = True
-        material.use_nodes = False # retain the original setting in case the following raises an exception
+        material.use_nodes = False  # retain the original setting in case the following raises an exception
 
     matInfoBefore = SEMaterialInfo(material)
     createMaterialNodeTree(material.node_tree)
@@ -653,6 +621,8 @@ def upgradeToNodeMaterial(material: bpy.types.Material):
     matInfo.specularPowerNode.outputs[0].default_value = matInfoBefore.specularPower
     matInfo.parallaxHeightNode.outputs[0].default_value = matInfoBefore.parallaxHeight
     matInfo.parallaxBackOffsetNode.outputs[0].default_value = matInfoBefore.parallaxBackOffset
+    matInfo.windScaleNode.outputs[0].default_value = matInfoBefore.windScale
+    matInfo.windFrequencyNode.outputs[0].default_value = matInfoBefore.windFrequency
 
     imagesToSet = {k : imageFromFilePath(v) for k, v in matInfoBefore.images.items()}
 
@@ -686,24 +656,32 @@ class DATA_PT_spceng_material(bpy.types.Panel):
         matInfo = SEMaterialInfo(mat)
         d = data(mat)
 
+        def image(texType: TextureType):
+            if texType in matInfo.textureNodes:
+                split = layout.split(0.25)
+                split.label(texType.name)
+                split.template_ID(matInfo.textureNodes[texType], 'image', open='image.open')
+
         def msg(msg, icon='INFO', layout=layout, align='CENTER'):
             row = layout.row()
             row.alignment = align
             row.label(msg, icon=icon)
 
-        if not matInfo.isOldMaterial and context.scene.render.engine != 'CYCLES':
+        if matInfo.isOldMaterial:
+            layout.separator()
+            layout.operator("material.spceng_material_setup", "Convert to Nodes Material", icon="RECOVER_AUTO")
+            return
+        elif context.scene.render.engine != 'CYCLES':
             msg("The render engine should be 'Cycles Render'.")
             layout.separator()
-
-        splitPercent = 0.25
 
         col = layout.column()
         col.alert = matInfo.warnAlphaMask
         col.prop(d, "technique")
         if matInfo.warnAlphaMask:
-            msg("The AlphamaskTexture is used. Select AlphaMask or Decal.", 'ERROR', col, 'RIGHT')
+            msg("The AlphamaskTexture is used. Select AlphaMask, Decal, or Foliage.", 'ERROR', col, 'RIGHT')
 
-        if 'GLASS' == d.technique:
+        if d.technique == 'GLASS':
             layout.separator()
             layout.prop(d, "glass_smooth")
 
@@ -712,21 +690,18 @@ class DATA_PT_spceng_material(bpy.types.Panel):
             col.prop(d, "glass_material_cw", icon='LIBRARY_DATA_DIRECT', text="Inwards")
 
         layout.separator()
-        if not matInfo.isOldMaterial:
-            row = layout.row(align=True)
-            row.prop(d, "display_dx9", text='', icon="IMAGE_COL")
-            row.label('DirectX 9')
 
-        if d.technique != 'GLASS':
-            split = layout.split(splitPercent)
-            split.label("Diffuse Color")
-            if matInfo.diffuseColorNode:
-                split.prop(matInfo.diffuseColorNode.outputs[0], "default_value", text="")
-            else:
-                split.column().prop(d, "diffuse_color", text="")
-            split.column()
+        image(TextureType.ColorMetal)
+        image(TextureType.NormalGloss)
+        image(TextureType.AddMaps)
+        image(TextureType.Alphamask)
+        if matInfo.shouldUseNodes:
+            layout.separator()
+            layout.operator("cycles.use_shading_nodes", icon="NODETREE")
 
-        split = layout.split(splitPercent)
+        layout.separator()
+
+        split = layout.split(0.25)
         split.label("Specular")
         split = split.split()
         if matInfo.specularIntensityNode:
@@ -738,7 +713,7 @@ class DATA_PT_spceng_material(bpy.types.Panel):
         else:
             split.column().prop(d, "specular_power", text="Power")
 
-        split = layout.split(splitPercent)
+        split = layout.split(0.25)
         split.label("Parallax")
         split = split.split()
         if matInfo.parallaxHeightNode:
@@ -750,32 +725,18 @@ class DATA_PT_spceng_material(bpy.types.Panel):
         else:
             split.column().prop(d, "parallax_back_offset", text="Offset")
 
-
-        def image(texType: TextureType):
-            if texType in matInfo.textureNodes:
-                split = layout.split(splitPercent)
-                split.label(texType.name)
-                split.template_ID(matInfo.textureNodes[texType], 'image', open='image.open')
-
-        if matInfo.isOldMaterial:
-            layout.separator()
-            layout.operator("material.spceng_material_setup", "Convert to Nodes Material", icon="RECOVER_AUTO")
+        split = layout.split(0.25)
+        split.label("Wind")
+        split = split.split()
+        if matInfo.windScaleNode:
+            split.column().prop(matInfo.windScaleNode.outputs[0], "default_value", text="Scale")
         else:
-            layout.separator()
-            image(TextureType.Diffuse)
-            image(TextureType.Normal)
+            split.column().prop(d, "wind_scale", text="Scale")
+        if matInfo.windFrequencyNode:
+            split.column().prop(matInfo.windFrequencyNode.outputs[0], "default_value", text="Frequency")
+        else:
+            split.column().prop(d, "wind_frequency", text="Frequency")
 
-            layout.separator()
-            row = layout.row(align=True)
-            row.prop(d, "display_dx11", text='', icon="IMAGE_COL")
-            row.label('DirectX 11')
-            image(TextureType.ColorMetal)
-            image(TextureType.NormalGloss)
-            image(TextureType.AddMaps)
-            image(TextureType.Alphamask)
-            if matInfo.shouldUseNodes:
-                layout.separator()
-                layout.operator("cycles.use_shading_nodes", icon="NODETREE")
 
 @bpy.app.handlers.persistent
 def syncTextureNodes(dummy):
