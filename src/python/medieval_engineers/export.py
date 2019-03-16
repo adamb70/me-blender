@@ -12,7 +12,7 @@ from mathutils import Matrix
 
 from .mount_points import mount_point_definitions, mount_points_xml
 from .utils import scaleUni, md5sum
-from .types import data, prefs, getBaseDir, SESceneProperties
+from .types import data, prefs, getBaseDir, MESceneProperties
 from .fbx import save_single
 
 from bpy_extras.io_utils import axis_conversion, ExportHelper
@@ -97,7 +97,7 @@ del func
 
 class ExportSettings:
     def __init__(self, scene, outputDir=None, exportNodes=None, mwmDir=None):
-        def typeCast(data) -> SESceneProperties: # allows type inference in IDE
+        def typeCast(data) -> MESceneProperties: # allows type inference in IDE
             return data
 
         self.scene = scene # ObjectSource.getObjects() uses .utils.scene() instead
@@ -257,9 +257,9 @@ def export_fbx(settings: ExportSettings, filepath, objects, fbx_settings = None)
         # some internals of the fbx exporter depend on them and will step out of line if they are not present
         'version': 'BIN7400',
         'use_mesh_edges': False,
-        'use_custom_props': False, # SE / Havok properties are hacked directly into the modified fbx importer
+        'use_custom_props': False, # ME / Havok properties are hacked directly into the modified fbx importer
         # anim, BIN7400
-        'bake_anim': False, # no animation export to SE by default
+        'bake_anim': False, # no animation export to ME by default
         'bake_anim_use_all_bones': True,
         'bake_anim_use_nla_strips': True,
         'bake_anim_use_all_actions': True,
@@ -267,7 +267,7 @@ def export_fbx(settings: ExportSettings, filepath, objects, fbx_settings = None)
         'bake_anim_step': 1.0,
         'bake_anim_simplify_factor': 1.0,
         # anim, ASCII6100
-        'use_anim' : False, # no animation export to SE by default
+        'use_anim' : False, # no animation export to ME by default
         'use_anim_action_all' : True,
         'use_default_take' : True,
         'use_anim_optimize' : True,
@@ -279,7 +279,7 @@ def export_fbx(settings: ExportSettings, filepath, objects, fbx_settings = None)
         'batch_mode': 'OFF',
         'use_batch_own_dir': True,
         'use_metadata': True,
-        # important settings for SE
+        # important settings for ME
         'object_types': {'MESH', 'EMPTY'},
         'axis_forward': 'Z',
         'axis_up': 'Y',
@@ -329,7 +329,7 @@ def fbx_to_hkt(settings: ExportSettings, srcfile, dstfile):
 from .havok_options import HAVOK_OPTION_FILE_CONTENT
 
 def hkt_filter(settings: ExportSettings, srcfile, dstfile, options=HAVOK_OPTION_FILE_CONTENT):
-    hko = tempfile.NamedTemporaryFile(mode='wt', prefix='space_engineers_', suffix=".hko", delete=False)
+    hko = tempfile.NamedTemporaryFile(mode='wt', prefix='medieval_engineers_', suffix=".hko", delete=False)
     try:
         with hko.file as f:
             f.write(options)
@@ -395,7 +395,7 @@ def generateBlockDefXml(
     ElementTree.SubElement(block, 'CubeSize').text = settings.CubeSize
     ElementTree.SubElement(block, 'BlockTopology').text = 'TriangleMesh'
 
-    x, z, y = d.block_dimensions # z and y switched on purpose; y is up, z is forward in SE
+    x, z, y = d.block_dimensions # z and y switched on purpose; y is up, z is forward in ME
     eSize = ElementTree.SubElement(block, 'Size')
     eSize.attrib = OrderedDict([('x', str(x)), ('y', str(y)), ('z', str(z)), ])
 

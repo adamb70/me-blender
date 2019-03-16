@@ -9,7 +9,7 @@ from string import Template
 from bpy.props import BoolProperty, EnumProperty, FloatProperty, StringProperty
 from bpy_extras.io_utils import path_reference_mode, orientation_helper_factory
 from .texture_files import TextureType
-from .types import sceneData, data, SEMaterialInfo
+from .types import sceneData, data, MEMaterialInfo
 from .utils import layer_bits, layer_bit, scene, first, PinnedScene, reportMessage, exportSettings
 from .export import ExportSettings, export_fbx, fbx_to_hkt, hkt_filter, write_pretty_xml, mwmbuilder, generateBlockDefXml
 from .mwmbuilder import material_xml, mwmbuilder_xml, lod_xml
@@ -33,7 +33,7 @@ MESH_LIKE_TYPES = {'CURVE', 'SURFACE', 'FONT', 'META'}
 ACCEPTABLE_OUTCOME = {'SUCCESS', 'PROBLEMS'}
 
 class BlockExportTree(bpy.types.NodeTree):
-    bl_idname = "SEBlockExportTree"
+    bl_idname = "MEBlockExportTree"
     bl_label = "Block Export Settings"
     bl_icon = "SCRIPTPLUGINS"
     type = "CUSTOM"
@@ -84,7 +84,7 @@ class Upgradable:
 
 # -------------------------------------------------------------------------------------------------------------------- #
 
-class SESocket:
+class MESocket:
     def draw(self, context, layout, node, text):
         '''Do not override. Override drawChecked() instead.'''
         source = self.firstSource()
@@ -135,7 +135,7 @@ class SESocket:
                     return link.to_socket
         return None
 
-class TextSocket(SESocket, TextSource):
+class TextSocket(MESocket, TextSource):
     type = "STRING"
 
     show_editor_if_unlinked = bpy.props.BoolProperty(default=False)
@@ -199,7 +199,7 @@ class TextSocket(SESocket, TextSource):
 
         super().drawChecked(context, layout, node, text, source)
 
-class ExportSocket(SESocket, Exporter):
+class ExportSocket(MESocket, Exporter):
     def export(self, settings: ExportSettings):
         '''Delegates the export to a linked source-socket if this is an input-socket
         or to the node if this is an output-socket.
@@ -217,7 +217,7 @@ class ExportSocket(SESocket, Exporter):
 
         return source.export(settings)
 
-class ObjectsSocket(SESocket, ObjectSource, ParamSource, ReadyState):
+class ObjectsSocket(MESocket, ObjectSource, ParamSource, ReadyState):
     n = bpy.props.IntProperty(default=-1)
     layer = bpy.props.IntProperty()
 
@@ -288,7 +288,7 @@ class FileSocket(TextSocket, ReadyState):
 # -------------------------------------------------------------------------------------------------------------------- #
 
 class TemplateStringSocket(bpy.types.NodeSocket, TextSocket):
-    bl_idname = "SETemplateStringSocket"
+    bl_idname = "METemplateStringSocket"
     bl_label = "Text"
     bl_color = COLOR_TEXT_SKT
 
@@ -298,7 +298,7 @@ class TemplateStringSocket(bpy.types.NodeSocket, TextSocket):
         return isinstance(socket, TextSocket)
 
 class MwmFileSocket(bpy.types.NodeSocket, FileSocket, ExportSocket):
-    bl_idname = "SEMwmFileSocket"
+    bl_idname = "MEMwmFileSocket"
     bl_label = ".mwm"
     bl_color = COLOR_MWM_SKT
 
@@ -311,7 +311,7 @@ RENDER_QUALITIES = [
 ]
 
 class LodInputSocket(bpy.types.NodeSocket, FileSocket, ExportSocket):
-    bl_idname = "SELodInputSocket"
+    bl_idname = "MELodInputSocket"
     bl_label = "LOD"
     bl_color = COLOR_MWM_SKT
 
@@ -346,19 +346,19 @@ class LodInputSocket(bpy.types.NodeSocket, FileSocket, ExportSocket):
         return isinstance(socket, MwmFileSocket) # or isinstance(socket, TemplateStringSocket)
 
 class HktFileSocket(bpy.types.NodeSocket, FileSocket, ExportSocket):
-    bl_idname = "SEHktFileSocket"
+    bl_idname = "MEHktFileSocket"
     bl_label = ".hkt"
     bl_color = COLOR_HKT_SKT
 
 class ObjectListSocket(bpy.types.NodeSocket, ObjectsSocket):
-    bl_idname = "SEObjectListSocket"
+    bl_idname = "MEObjectListSocket"
     bl_label = "Objects"
     bl_color = COLOR_OBJECTS_SKT
     type = 'CUSTOM'
 
 class RigidBodyObjectsSocket(bpy.types.NodeSocket, ObjectsSocket):
     '''selects only objects that have rigid-body settings'''
-    bl_idname = "SERigidBodyObjectsSocket"
+    bl_idname = "MERigidBodyObjectsSocket"
     bl_label = "Objects"
     bl_color = COLOR_OBJECTS_SKT
     type = 'CUSTOM'
@@ -368,7 +368,7 @@ class RigidBodyObjectsSocket(bpy.types.NodeSocket, ObjectsSocket):
 
 class ExportableObjectsSocket(bpy.types.NodeSocket, ObjectsSocket):
     '''selects only objects that are of an exportable type'''
-    bl_idname = "SEExportableObjectsSocket"
+    bl_idname = "MEExportableObjectsSocket"
     bl_label = "Objects"
     bl_color = COLOR_OBJECTS_SKT
     type = 'CUSTOM'
@@ -382,7 +382,7 @@ class ExportableObjectsSocket(bpy.types.NodeSocket, ObjectsSocket):
 
 class MountPointObjectsSocket(bpy.types.NodeSocket, ObjectsSocket):
     '''selects only objects that have a 'MountPoint' material'''
-    bl_idname = "SEMountPointObjectsSocket"
+    bl_idname = "MEMountPointObjectsSocket"
     bl_label = "Objects"
     bl_color = COLOR_OBJECTS_SKT
     type = 'CUSTOM'
@@ -393,13 +393,13 @@ class MountPointObjectsSocket(bpy.types.NodeSocket, ObjectsSocket):
 
 # -------------------------------------------------------------------------------------------------------------------- #
 
-class SENode:
+class MENode:
     @classmethod
     def poll(cls, tree):
         return tree.bl_idname == BlockExportTree.bl_idname
 
-class TemplateStringNode(bpy.types.Node, SENode):
-    bl_idname = "SETemplateStringNode"
+class TemplateStringNode(bpy.types.Node, MENode):
+    bl_idname = "METemplateStringNode"
     bl_label = "Text with Parameters"
     bl_icon = "TEXT"
 
@@ -412,8 +412,8 @@ class TemplateStringNode(bpy.types.Node, SENode):
         if len(self.outputs) > 0:
             layout.prop(self.outputs['Text'], "text", text="")
 
-class HavokFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
-    bl_idname = "SEHavokFileNode"
+class HavokFileNode(bpy.types.Node, MENode, Exporter, ReadyState):
+    bl_idname = "MEHavokFileNode"
     bl_label = "Havok Converter"
     bl_icon = "PHYSICS"
 
@@ -465,7 +465,7 @@ class HavokFileNode(bpy.types.Node, SENode, Exporter, ReadyState):
         return settings.cacheValue(hktfile, 'SUCCESS')
 
 
-IOFBXOrientationHelper = orientation_helper_factory("IOFBXOrientationHelper", axis_forward='Z', axis_up='Y') # SE; -Z, Y
+IOFBXOrientationHelper = orientation_helper_factory("IOFBXOrientationHelper", axis_forward='Z', axis_up='Y') # ME; -Z, Y
 
 # as defined by io_scene_fbx/__init__.py/ExportFBX, can't reuse because the class is a bpy.types.Operator
 class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
@@ -476,7 +476,7 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
                ),
         name="Version",
         description="Choose which version of the exporter to use",
-        default='BIN7400' # SE
+        default='BIN7400' # ME
     )
 
     # 7.4 only
@@ -486,7 +486,7 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
                ('ARMATURE', "Armatures", "Armature-related settings"),
                ('ANIMATION', "Animation", "Animation-related settings"),
                ),
-        options={'SKIP_SAVE'}, # SE
+        options={'SKIP_SAVE'}, # ME
         name="ui_tab",
         description="Export options categories",
     )
@@ -509,7 +509,7 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
         name="Apply Unit",
         description="Scale all data according to current Blender size, to match default FBX unit "
                     "(centimeter, some importers do not handle UnitScaleFactor properly)",
-        default=False, # SE ; True
+        default=False, # ME ; True
     )
     # 7.4 only
     bake_space_transform = BoolProperty(
@@ -531,7 +531,7 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
                ('OTHER', "Other", "Other geometry types, like curve, metaball, etc. (converted to meshes)"), # 'MOD_REMESH'
                ),
         description="Which kind of object to export",
-        default={'EMPTY', 'MESH' }, # SE ; {'EMPTY', 'CAMERA', 'LAMP', 'ARMATURE', 'MESH', 'OTHER' },
+        default={'EMPTY', 'MESH' }, # ME ; {'EMPTY', 'CAMERA', 'LAMP', 'ARMATURE', 'MESH', 'OTHER' },
     )
 
     use_mesh_modifiers = BoolProperty(
@@ -583,7 +583,7 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
                ('-Y', "-Y Axis", ""),
                ('-Z', "-Z Axis", ""),
                ),
-        default='X',  # SE ; X
+        default='X',  # ME ; X
     )
     secondary_bone_axis = EnumProperty(
         name="Secondary Bone Axis",
@@ -594,7 +594,7 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
                ('-Y', "-Y Axis", ""),
                ('-Z', "-Z Axis", ""),
                ),
-        default='Y', # SE ; X
+        default='Y', # ME ; X
     )
     use_armature_deform_only = BoolProperty(
         name="Only Deform Bones",
@@ -616,7 +616,7 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
     bake_anim = BoolProperty(
         name="Baked Animation",
         description="Export baked keyframe animation",
-        default=False, # SE ; True
+        default=False, # ME ; True
     )
     bake_anim_use_all_bones = BoolProperty(
         name="Key All Bones",
@@ -660,7 +660,7 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
     use_anim = BoolProperty(
         name="Animation",
         description="Export keyframe animation",
-        default=False, # SE ; True
+        default=False, # ME ; True
     )
     use_anim_action_all = BoolProperty(
         name="All Actions",
@@ -699,7 +699,7 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
                ('SCENE', "Scene", "Each scene as a file"),
                ('GROUP', "Group", "Each group as a file"),
                ),
-        default = 'OFF' # SE
+        default = 'OFF' # ME
     )
     use_batch_own_dir = BoolProperty(
         name="Batch Own Dir",
@@ -718,8 +718,8 @@ class MwmExportProperties(bpy.types.PropertyGroup):
     rotation_y = bpy.props.FloatProperty(name="Rotation Y", min=-1000, max=1000, soft_min=-360, soft_max=360, default=0,
         description="Instructs MwmBuilder to rotate everything around the Y-axis. Exporting a character seems to require a value of 180°")
 
-class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
-    bl_idname = "SEMwmFileNode"
+class MwmFileNode(bpy.types.Node, MENode, Exporter, ReadyState, Upgradable):
+    bl_idname = "MEMwmFileNode"
     bl_label = "MwmBuilder"
     bl_icon = "EXPORT"
 
@@ -864,7 +864,7 @@ class MwmFileNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
                 if not ms is None and not ms.material is None:
                     materials[ms.material.name] = ms.material
             if isinstance(o.data, bpy.types.Mesh) and len(o.data.uv_layers) == 0:
-                settings.error("Mesh-object '%s' has no UV-map. This will crash SE's DirectX 11 renderer." % o.name, file=mwmfile, node=self)
+                settings.error("Mesh-object '%s' has no UV-map. This will crash ME's DirectX 11 renderer." % o.name, file=mwmfile, node=self)
         materials_xml = [material_xml(settings, m, mwmfile, self) for m in materials.values()]
 
         paramsfile = join(settings.outputDir, name + ".xml")
@@ -984,8 +984,8 @@ class TextFilterNode:
 
         return matchInverted if self.use_inverted_match else matcher
 
-class GroupFilterObjectsNode(bpy.types.Node, SENode, TextFilterNode, ObjectSource):
-    bl_idname = "SEGroupFilterObjectsNode"
+class GroupFilterObjectsNode(bpy.types.Node, MENode, TextFilterNode, ObjectSource):
+    bl_idname = "MEGroupFilterObjectsNode"
     bl_label = "Group Name Filter"
     bl_icon = "GROUP"
     bl_width_default = 170.0
@@ -1009,8 +1009,8 @@ class GroupFilterObjectsNode(bpy.types.Node, SENode, TextFilterNode, ObjectSourc
     def getSearchSource(self):
         return (bpy.data, "groups")
 
-class NameFilterObjectsNode(bpy.types.Node, SENode, TextFilterNode, ObjectSource):
-    bl_idname = "SENameFilterObjectsNode"
+class NameFilterObjectsNode(bpy.types.Node, MENode, TextFilterNode, ObjectSource):
+    bl_idname = "MENameFilterObjectsNode"
     bl_label = "Object Name Filter"
     bl_icon = "COPY_ID"
     bl_width_default = 170.0
@@ -1032,8 +1032,8 @@ class NameFilterObjectsNode(bpy.types.Node, SENode, TextFilterNode, ObjectSource
     def getSearchSource(self):
         return (scene(), "objects")
 
-class BlockSizeFilterObjectsNode(bpy.types.Node, SENode, ObjectSource):
-    bl_idname = "SEBlockSizeFilterObjectsNode"
+class BlockSizeFilterObjectsNode(bpy.types.Node, MENode, ObjectSource):
+    bl_idname = "MEBlockSizeFilterObjectsNode"
     bl_label = "Block Size Filter"
     bl_icon = "META_BALL"
     bl_width_default = 170.0
@@ -1054,8 +1054,8 @@ class BlockSizeFilterObjectsNode(bpy.types.Node, SENode, ObjectSource):
         inSocket = self.inputs["Small Block Objects"] if isSmall else self.inputs["Large Block Objects"]
         return inSocket.getObjects() if inSocket.is_linked else scene().objects
 
-class LayerObjectsNode(bpy.types.Node, SENode, ObjectSource, Upgradable):
-    bl_idname = "SELayerObjectsNode"
+class LayerObjectsNode(bpy.types.Node, MENode, ObjectSource, Upgradable):
+    bl_idname = "MELayerObjectsNode"
     bl_label = "Layer Mask Filter"
     bl_icon = "GROUP"
     bl_width_default = 170.0
@@ -1086,8 +1086,8 @@ class LayerObjectsNode(bpy.types.Node, SENode, ObjectSource, Upgradable):
         objects = inputSocket.getObjects() if inputSocket.is_linked else scene().objects
         return (obj for obj in objects if (layer_bits(obj.layers) & mask) != 0)
 
-class SeparateLayerObjectsNode(bpy.types.Node, SENode, ObjectSource, Upgradable):
-    bl_idname = "SESeparateLayerObjectsNode"
+class SeparateLayerObjectsNode(bpy.types.Node, MENode, ObjectSource, Upgradable):
+    bl_idname = "MESeparateLayerObjectsNode"
     bl_label = "Layer Splitter"
     bl_icon = "GROUP"
     bl_width_default = 170.0
@@ -1132,8 +1132,8 @@ class SeparateLayerObjectsNode(bpy.types.Node, SENode, ObjectSource, Upgradable)
         objects = inputSocket.getObjects() if inputSocket.is_linked else scene().objects
         return (obj for obj in objects if (layer_bits(obj.layers) & mask) != 0)
 
-class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradable):
-    bl_idname = "SEBlockDefNode"
+class BlockDefinitionNode(bpy.types.Node, MENode, Exporter, ReadyState, Upgradable):
+    bl_idname = "MEBlockDefNode"
     bl_label = "Block Definition"
     bl_icon = "SETTINGS"
 
@@ -1239,7 +1239,7 @@ class BlockDefinitionNode(bpy.types.Node, SENode, Exporter, ReadyState, Upgradab
          mwmMainObjectsSocket = mwmMainFileSocket.node.inputs['Objects']
          return mwmMainObjectsSocket.getObjects()
 
-    def _getLayer(self, socket: SESocket):
+    def _getLayer(self, socket: MESocket):
         source = socket.firstSource(type=ObjectsSocket)
         if source is None:
             return -1
@@ -1285,20 +1285,20 @@ def getUsedMaterials(scene: bpy.types.Scene = None):
 import nodeitems_utils
 from nodeitems_utils import NodeCategory, NodeItem
 
-class SENodeCategory(NodeCategory):
+class MENodeCategory(NodeCategory):
     @classmethod
     def poll(cls, context):
         return context.space_data.tree_type == BlockExportTree.bl_idname
 
 categories = [
-    SENodeCategory(BlockExportTree.bl_idname+"Filters", "Object Filters", items=[
+    MENodeCategory(BlockExportTree.bl_idname+"Filters", "Object Filters", items=[
         NodeItem(NameFilterObjectsNode.bl_idname, NameFilterObjectsNode.bl_label),
         NodeItem(GroupFilterObjectsNode.bl_idname, GroupFilterObjectsNode.bl_label),
         NodeItem(BlockSizeFilterObjectsNode.bl_idname, BlockSizeFilterObjectsNode.bl_label),
         NodeItem(LayerObjectsNode.bl_idname, LayerObjectsNode.bl_label),
         NodeItem(SeparateLayerObjectsNode.bl_idname, SeparateLayerObjectsNode.bl_label),
     ]),
-    SENodeCategory(BlockExportTree.bl_idname+"Exporters", "Block Export", items=[
+    MENodeCategory(BlockExportTree.bl_idname+"Exporters", "Block Export", items=[
         NodeItem(TemplateStringNode.bl_idname, TemplateStringNode.bl_label),
         NodeItem(MwmFileNode.bl_idname, MwmFileNode.bl_label),
         NodeItem(HavokFileNode.bl_idname, HavokFileNode.bl_label),
@@ -1353,14 +1353,14 @@ def register():
         bpy.app.handlers.load_post.append(upgradeNodesAfterLoad)
 
     try:
-        nodeitems_utils.register_node_categories("SE_BLOCK_EXPORT", categories)
+        nodeitems_utils.register_node_categories("ME_BLOCK_EXPORT", categories)
     except KeyError:
-        nodeitems_utils.unregister_node_categories("SE_BLOCK_EXPORT")
-        nodeitems_utils.register_node_categories("SE_BLOCK_EXPORT", categories)
+        nodeitems_utils.unregister_node_categories("ME_BLOCK_EXPORT")
+        nodeitems_utils.register_node_categories("ME_BLOCK_EXPORT", categories)
 
 def unregister():
     try:
-        nodeitems_utils.unregister_node_categories("SE_BLOCK_EXPORT")
+        nodeitems_utils.unregister_node_categories("ME_BLOCK_EXPORT")
     except KeyError:
         pass
 

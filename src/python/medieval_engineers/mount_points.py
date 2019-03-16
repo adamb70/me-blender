@@ -24,9 +24,9 @@ Side = namedtuple('Side', (
 Sides = [
     Side( Vector(( 0,  0,  1)), 'Top',    sparse(((X,X,-1), (Y,Y,-1))), BoxCorner.BTR, BoxCorner.FTL ),
     Side( Vector(( 0,  0, -1)), 'Bottom', sparse(((X,X,-1), (Y,Y, 1))), BoxCorner.FBR, BoxCorner.BBL ),
-    # right in Blender but left when viewed from the back (as SE does)
+    # right in Blender but left when viewed from the back (as ME does)
     Side( Vector(( 1,  0,  0)), 'Left',   sparse(((Y,X, 1), (Z,Y, 1))), BoxCorner.FBR, BoxCorner.BTR ),
-    # left in Blender but right when viewed from the back (as SE does)
+    # left in Blender but right when viewed from the back (as ME does)
     Side( Vector((-1,  0,  0)), 'Right',  sparse(((Y,X,-1), (Z,Y, 1))), BoxCorner.BBL, BoxCorner.FTL ),
     Side( Vector(( 0, -1,  0)), 'Front',  sparse(((X,X, 1), (Z,Y, 1))), BoxCorner.FBL, BoxCorner.FTR ),
     Side( Vector(( 0,  1,  0)), 'Back',   sparse(((X,X,-1), (Z,Y, 1))), BoxCorner.BBR, BoxCorner.BTL ),
@@ -39,9 +39,9 @@ def mount_point_definitions(mount_point_objects):
     """
     This algorithm does the following
     1. find all polygons with material 'MountPoint' from all given objects
-    2. decide which SE block-side each polygon is facing by comparing polygon normals
-    3. project the bounding box of the polygon onto that SE block-side
-    4. convert that projection into the coordinate system of the corresponding SE block-side
+    2. decide which ME block-side each polygon is facing by comparing polygon normals
+    3. project the bounding box of the polygon onto that ME block-side
+    4. convert that projection into the coordinate system of the corresponding ME block-side
     """
 
     # normalizes sizes to one block-cube

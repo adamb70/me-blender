@@ -30,7 +30,7 @@ def fbx_template_def_model(scene, settings, override_defaults=None, nbr_users=0)
     props = OrderedDict((
         # Name,   Value, Type, Animatable
         
-        # SE properties
+        # ME properties
         (b"file", ("", "p_string", False)),
         (b"highlight", ("", "p_string", False)),
 

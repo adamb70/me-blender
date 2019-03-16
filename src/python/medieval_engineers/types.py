@@ -31,7 +31,7 @@ def all_layers_visible(layer_mask):
 def getExportNodeTree(name):
     if name in bpy.data.node_groups:
         tree = bpy.data.node_groups[name]
-        if not tree is None and tree.bl_idname == "SEBlockExportTree":
+        if not tree is None and tree.bl_idname == "MEBlockExportTree":
             return tree
     return None
 
@@ -47,7 +47,7 @@ def getExportNodeTreeFromContext(context):
             if settings in bpy.data.node_groups:
                 tree = bpy.data.node_groups[settings]
 
-    if not tree is None and tree.bl_idname != "SEBlockExportTree":
+    if not tree is None and tree.bl_idname != "MEBlockExportTree":
         tree = None
 
     return tree
@@ -80,7 +80,7 @@ def version_icon(v: Version) -> str:
         return 'FILE_TICK' if addon.version == v else 'VISIBLE_IPO_ON'
     return 'SPACE3'
 
-class SEAddonPreferences(bpy.types.AddonPreferences):
+class MEAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__
 
     seDir = bpy.props.StringProperty(
@@ -170,7 +170,7 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
         row = split2.row(align=True)
         versionInfo = versions[self.selected_version]
         row.prop(self, 'selected_version', text="", icon=versionInfo[1][3])
-        row.operator('wm.space_engineers_check_version', icon="FILE_REFRESH", text="")
+        row.operator('wm.medieval_engineers_check_version', icon="FILE_REFRESH", text="")
 
         row = split2.row(align=True)
         row.enabled = not '_' == versionInfo[1][0]
@@ -189,11 +189,11 @@ class SEAddonPreferences(bpy.types.AddonPreferences):
         op.url = 'https://github.com/harag-on-steam/se-blender/releases'
 
 
-def prefs() -> SEAddonPreferences:
+def prefs() -> MEAddonPreferences:
     return bpy.context.user_preferences.addons[__package__].preferences
 
-class CheckVersionOnline(bpy.types.Operator):
-    bl_idname = "wm.space_engineers_check_version"
+class MECheckVersionOnline(bpy.types.Operator):
+    bl_idname = "wm.medieval_engineers_check_version"
     bl_label = "Download available versions"
     bl_description = "Downloads the list of available versions."
 
@@ -231,7 +231,7 @@ BLOCK_SIZE = [
     ('SMALL', 'Small block only', 'Exports a small block. No attempt to export a large block is made for this scene.'),
 ]
 
-class SESceneProperties(bpy.types.PropertyGroup):
+class MESceneProperties(bpy.types.PropertyGroup):
     name = PROP_GROUP
     
     is_block = bpy.props.BoolProperty( default=False, name="Export as Block", 
@@ -281,10 +281,10 @@ class SESceneProperties(bpy.types.PropertyGroup):
     def scene(self) -> bpy.types.Scene:
         return self.id_data
 
-def sceneData(scene: bpy.types.Scene) -> SESceneProperties:
+def sceneData(scene: bpy.types.Scene) -> MESceneProperties:
     return data(scene)
 
-class DATA_PT_spceng_scene(bpy.types.Panel):
+class DATA_PT_me_scene(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "scene"
@@ -299,62 +299,62 @@ class DATA_PT_spceng_scene(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        spceng = sceneData(context.scene)
+        me = sceneData(context.scene)
 
-        layout.active = spceng.is_block
-        layout.enabled = spceng.is_block
+        layout.active = me.is_block
+        layout.enabled = me.is_block
 
         col = layout.column()
         col.label(text="Block Size")
         split = col.split(percentage=.45, align=True)
-        split.prop(spceng, "block_size", text="")
+        split.prop(me, "block_size", text="")
         row = split.row(align=True)
-        row.prop(spceng, "block_dimensions", text="")
-        row.prop(spceng, "show_block_bounds", icon="MOD_MESHDEFORM", icon_only=True)
+        row.prop(me, "block_dimensions", text="")
+        row.prop(me, "show_block_bounds", icon="MOD_MESHDEFORM", icon_only=True)
 
         row = layout.row()
         row.alignment = 'RIGHT'
-        row.prop(spceng, 'use_custom_subtypeids')
+        row.prop(me, 'use_custom_subtypeids')
 
-        if spceng.use_custom_subtypeids:
+        if me.use_custom_subtypeids:
             split = layout.split()
 
             col = split.column()
-            col.enabled = spceng.block_size == 'LARGE' or spceng.block_size == 'SCALE_DOWN'
+            col.enabled = me.block_size == 'LARGE' or me.block_size == 'SCALE_DOWN'
             col.label(text="Large SubtypeId")
-            col.prop(spceng, 'large_subtypeid', text="")
+            col.prop(me, 'large_subtypeid', text="")
 
             col = split.column()
-            col.enabled =  spceng.block_size == 'SMALL' or spceng.block_size == 'SCALE_DOWN'
+            col.enabled =  me.block_size == 'SMALL' or me.block_size == 'SCALE_DOWN'
             col.label(text="Small SubtypeId")
-            col.prop(spceng, 'small_subtypeid', text="")
+            col.prop(me, 'small_subtypeid', text="")
 
         col = layout.column()
         col.label(text="Block Specular")
         split = col.split()
-        split.column().prop(spceng, "block_specular_power", text="Power")
-        split.column().prop(spceng, "block_specular_shininess", text="Shininess")
+        split.column().prop(me, "block_specular_power", text="Power")
+        split.column().prop(me, "block_specular_shininess", text="Shininess")
 
         layout.separator()
 
         col = layout.column(align=True)
-        col.prop(spceng, "export_path")
+        col.prop(me, "export_path")
 
         row = layout.row(align=True)
-        row.prop_search(spceng, "export_nodes", bpy.data, "node_groups", text="Export Settings")
-        if not any(nt for nt in bpy.data.node_groups if nt.bl_idname == "SEBlockExportTree"):
-            row.operator("export_scene.space_engineers_export_nodes", text="", icon='ZOOMIN')
+        row.prop_search(me, "export_nodes", bpy.data, "node_groups", text="Export Settings")
+        if not any(nt for nt in bpy.data.node_groups if nt.bl_idname == "MEBlockExportTree"):
+            row.operator("export_scene.medieval_engineers_export_nodes", text="", icon='ZOOMIN')
 
         layout.separator()
 
         col = layout.column(align=True)
-        op = col.operator("export_scene.space_engineers_block", text="Export scene as block", icon="EXPORT", )
-        op.settings_name = spceng.export_nodes
-        op = col.operator("export_scene.space_engineers_update_definitions", text="Update block definitions", icon="FILE_REFRESH")
-        op.settings_name = spceng.export_nodes
+        op = col.operator("export_scene.medieval_engineers_block", text="Export scene as block", icon="EXPORT", )
+        op.settings_name = me.export_nodes
+        op = col.operator("export_scene.medieval_engineers_update_definitions", text="Update block definitions", icon="FILE_REFRESH")
+        op.settings_name = me.export_nodes
 
 
-class NODE_PT_spceng_nodes(bpy.types.Panel):
+class NODE_PT_me_nodes(bpy.types.Panel):
     bl_space_type = 'NODE_EDITOR'
     bl_region_type = 'UI'
     bl_label = "Medieval Engineers Export"
@@ -362,23 +362,23 @@ class NODE_PT_spceng_nodes(bpy.types.Panel):
     @classmethod
     def poll(cls, context):
         nodeTree = getattr(context.space_data, 'node_tree')
-        return nodeTree and nodeTree.bl_idname == "SEBlockExportTree"
+        return nodeTree and nodeTree.bl_idname == "MEBlockExportTree"
 
     def draw(self, context):
         layout = self.layout
 
         layout.label("Export using these settings")
         col = layout.column(align=True)
-        op = col.operator("export_scene.space_engineers_block", text="Export scene as a block", icon="EXPORT")
+        op = col.operator("export_scene.medieval_engineers_block", text="Export scene as a block", icon="EXPORT")
         op.settings_name = context.space_data.node_tree.name
-        col.operator("export_scene.space_engineers_update_definitions", text="Update block definitions", icon="FILE_REFRESH")
+        col.operator("export_scene.medieval_engineers_update_definitions", text="Update block definitions", icon="FILE_REFRESH")
         op.settings_name = context.space_data.node_tree.name
 
         col = layout.column(align=True)
-        col.operator("export_scene.space_engineers_export_nodes", text="Add default export-nodes", icon='ZOOMIN')
-        col.operator("object.space_engineers_layer_names", text="Set Layer Names", icon='COPY_ID')
+        col.operator("export_scene.medieval_engineers_export_nodes", text="Add default export-nodes", icon='ZOOMIN')
+        col.operator("object.medieval_engineers_layer_names", text="Set Layer Names", icon='COPY_ID')
 
-class NODE_PT_spceng_nodes_mat(bpy.types.Panel):
+class NODE_PT_me_nodes_mat(bpy.types.Panel):
     bl_space_type = 'NODE_EDITOR'
     bl_region_type = 'UI'
     bl_label = "Medieval Engineers Material"
@@ -389,7 +389,7 @@ class NODE_PT_spceng_nodes_mat(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.operator("material.spceng_material_setup", icon='NODETREE')
+        layout.operator("material.me_material_setup", icon='NODETREE')
 
 def block_bounds():
     """
@@ -426,7 +426,7 @@ def show_block_bounds():
 # -----------------------------------------  Object Data ----------------------------------------- #
  
  
-class SEObjectProperties(bpy.types.PropertyGroup):
+class MEObjectProperties(bpy.types.PropertyGroup):
     name = PROP_GROUP
     file = bpy.props.StringProperty(name="Link to File", 
         description="Links this empty to another model file. Only specify the base name, do not include the .mwm extension.")
@@ -439,7 +439,7 @@ class SEObjectProperties(bpy.types.PropertyGroup):
 
 _RE_KNOW_VOLUME_HANDLES = re.compile(r"^(dummy_)?(detector_(terminal|conveyor|cockpit))", re.IGNORECASE)
 
-class DATA_PT_spceng_empty(bpy.types.Panel):
+class DATA_PT_me_empty(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "data"
@@ -470,7 +470,7 @@ class DATA_PT_spceng_empty(bpy.types.Panel):
             layout.separator()
             row = layout.row()
             row.alert = bool(_RE_KNOW_VOLUME_HANDLES.search(ob.name))
-            row.operator('object.spceng_empty_with_volume', icon='BBOX')
+            row.operator('object.me_empty_with_volume', icon='BBOX')
 
 
 # -----------------------------------------  Material Data ----------------------------------------- #
@@ -499,7 +499,7 @@ DX11_TEXTURE_ENUM = [
 ]
 
 
-class SEMaterialProperties(bpy.types.PropertyGroup):
+class MEMaterialProperties(bpy.types.PropertyGroup):
     name = PROP_GROUP
 
     nodes_version = bpy.props.IntProperty(default=0, options = {'SKIP_SAVE'})
@@ -525,7 +525,7 @@ class SEMaterialProperties(bpy.types.PropertyGroup):
     glass_smooth = bpy.props.BoolProperty(name="Smooth Glass", description="Should the faces of the glass be shaded smooth?")
 
 
-class SEMaterialInfo:
+class MEMaterialInfo:
     def __init__(self, material: bpy.types.Material):
         self.material = material
 
@@ -612,9 +612,9 @@ def upgradeToNodeMaterial(material: bpy.types.Material):
         material.use_nodes = True
         material.use_nodes = False  # retain the original setting in case the following raises an exception
 
-    matInfoBefore = SEMaterialInfo(material)
+    matInfoBefore = MEMaterialInfo(material)
     createMaterialNodeTree(material.node_tree)
-    matInfo = SEMaterialInfo(material)
+    matInfo = MEMaterialInfo(material)
 
     matInfo.diffuseColorNode.outputs[0].default_value = rgba(matInfoBefore.diffuseColor)
     matInfo.specularIntensityNode.outputs[0].default_value = matInfoBefore.specularIntensity
@@ -639,7 +639,7 @@ def upgradeToNodeMaterial(material: bpy.types.Material):
     material.use_nodes = True
 
 
-class DATA_PT_spceng_material(bpy.types.Panel):
+class DATA_PT_me_material(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "material"
@@ -653,7 +653,7 @@ class DATA_PT_spceng_material(bpy.types.Panel):
         layout = self.layout
 
         mat = context.material
-        matInfo = SEMaterialInfo(mat)
+        matInfo = MEMaterialInfo(mat)
         d = data(mat)
 
         def image(texType: TextureType):
@@ -669,7 +669,7 @@ class DATA_PT_spceng_material(bpy.types.Panel):
 
         if matInfo.isOldMaterial:
             layout.separator()
-            layout.operator("material.spceng_material_setup", "Convert to Nodes Material", icon="RECOVER_AUTO")
+            layout.operator("material.me_material_setup", "Convert to Nodes Material", icon="RECOVER_AUTO")
             return
         elif context.scene.render.engine != 'CYCLES':
             msg("The render engine should be 'Cycles Render'.")
@@ -746,7 +746,7 @@ def syncTextureNodes(dummy):
     """
     for mat in bpy.data.materials:
         if mat.node_tree and mat.node_tree.is_updated:
-            matInfo = SEMaterialInfo(mat)
+            matInfo = MEMaterialInfo(mat)
             for t in TextureType:
                 node = matInfo.textureNodes.get(t, None)
                 altNode = matInfo.altTextureNodes.get(t, None)

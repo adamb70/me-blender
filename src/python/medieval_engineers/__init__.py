@@ -45,7 +45,7 @@ version = versions.Version(version=bl_info['version'], prerelease=False, qualifi
 
 import bpy
 
-class SEView3DToolsPanel(bpy.types.Panel):
+class MEView3DToolsPanel(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'TOOLS'
     bl_category = "Create"
@@ -84,34 +84,34 @@ def menu_func_export(self, context):
 def register():
     from bpy.utils import register_class
 
-    register_class(utils.MessageOperator)
+    register_class(utils.MEMessageOperator)
 
-    register_class(types.SEAddonPreferences)
-    register_class(types.SESceneProperties)
-    register_class(types.SEObjectProperties)
-    register_class(types.SEMaterialProperties)
+    register_class(types.MEAddonPreferences)
+    register_class(types.MESceneProperties)
+    register_class(types.MEObjectProperties)
+    register_class(types.MEMaterialProperties)
    
-    bpy.types.Object.medieval_engineers = bpy.props.PointerProperty(type=types.SEObjectProperties)
-    bpy.types.Scene.medieval_engineers = bpy.props.PointerProperty(type=types.SESceneProperties)
-    bpy.types.Material.medieval_engineers = bpy.props.PointerProperty(type=types.SEMaterialProperties)
+    bpy.types.Object.medieval_engineers = bpy.props.PointerProperty(type=types.MEObjectProperties)
+    bpy.types.Scene.medieval_engineers = bpy.props.PointerProperty(type=types.MESceneProperties)
+    bpy.types.Material.medieval_engineers = bpy.props.PointerProperty(type=types.MEMaterialProperties)
 
-    register_class(types.NODE_PT_spceng_nodes)
-    register_class(types.NODE_PT_spceng_nodes_mat)
-    register_class(types.DATA_PT_spceng_scene)
-    register_class(types.DATA_PT_spceng_empty)
-    register_class(types.DATA_PT_spceng_material)
+    register_class(types.NODE_PT_me_nodes)
+    register_class(types.NODE_PT_me_nodes_mat)
+    register_class(types.DATA_PT_me_scene)
+    register_class(types.DATA_PT_me_empty)
+    register_class(types.DATA_PT_me_material)
 
     types.register()
     pbr_node_group.register()
 
-    register_class(types.CheckVersionOnline)
+    register_class(types.MECheckVersionOnline)
     operators.register()
 
     bpy.types.INFO_MT_file_export.append(menu_func_export)
 
     nodes.register()
 
-    register_class(SEView3DToolsPanel)
+    register_class(MEView3DToolsPanel)
 
     mount_points.enable_draw_callback()
 
@@ -121,32 +121,32 @@ def unregister():
 
     mount_points.disable_draw_callback()
 
-    unregister_class(SEView3DToolsPanel)
+    unregister_class(MEView3DToolsPanel)
 
     nodes.unregister()
 
     bpy.types.INFO_MT_file_export.remove(menu_func_export)
 
     operators.unregister()
-    unregister_class(types.CheckVersionOnline)
+    unregister_class(types.MECheckVersionOnline)
 
     pbr_node_group.unregister()
     types.unregister()
 
-    unregister_class(types.DATA_PT_spceng_material)
-    unregister_class(types.DATA_PT_spceng_empty)
-    unregister_class(types.DATA_PT_spceng_scene)
-    unregister_class(types.NODE_PT_spceng_nodes_mat)
-    unregister_class(types.NODE_PT_spceng_nodes)
+    unregister_class(types.DATA_PT_me_material)
+    unregister_class(types.DATA_PT_me_empty)
+    unregister_class(types.DATA_PT_me_scene)
+    unregister_class(types.NODE_PT_me_nodes_mat)
+    unregister_class(types.NODE_PT_me_nodes)
 
     del bpy.types.Material.medieval_engineers
     del bpy.types.Object.medieval_engineers
     del bpy.types.Scene.medieval_engineers
     
-    unregister_class(types.SEMaterialProperties)
-    unregister_class(types.SEObjectProperties)
-    unregister_class(types.SESceneProperties)
-    unregister_class(types.SEAddonPreferences)
+    unregister_class(types.MEMaterialProperties)
+    unregister_class(types.MEObjectProperties)
+    unregister_class(types.MESceneProperties)
+    unregister_class(types.MEAddonPreferences)
 
-    unregister_class(utils.MessageOperator)
+    unregister_class(utils.MEMessageOperator)
 

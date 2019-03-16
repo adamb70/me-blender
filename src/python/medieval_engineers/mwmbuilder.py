@@ -3,7 +3,7 @@ import os
 import bpy
 from xml.etree import ElementTree
 from .texture_files import TextureType
-from .types import data, SEMaterialInfo, rgb
+from .types import data, MEMaterialInfo, rgb
 import re
 
 
@@ -48,7 +48,7 @@ def _material_technique(technique):
 def material_xml(settings, mat, file=None, node=None):
     d = data(mat)
     e = ElementTree.Element("Material", Name=mat.name)
-    m = SEMaterialInfo(mat)
+    m = MEMaterialInfo(mat)
 
     def param(name, value):
         se = ElementTree.SubElement(e, 'Parameter', Name=name)

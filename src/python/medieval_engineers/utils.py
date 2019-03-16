@@ -225,7 +225,7 @@ class BoxCorner(IntEnum):
     corner indices in terms of Object.bound_box,
     letter codes meaning Front/Back, Top/Bottom, Left/Right
     The directions are relative to a viewpoint in front of the object.
-    So 'left' is 'left' in Blender but 'right' in Space Engineers and vice versa
+    So 'left' is 'left' in Blender but 'right' in Medieval Engineers and vice versa
     """
     FBL = 0
     FTL = 1
@@ -378,10 +378,10 @@ class PinnedSettings():
         currentSettingsHolder.settings = self.previousSettings
 
 def reportMessage(msgType: str, msg: str):
-    bpy.ops.info.spceng_reporter(msgtype=msgType, message=msg)
+    bpy.ops.info.me_reporter(msgtype=msgType, message=msg)
 
-class MessageOperator(bpy.types.Operator):
-    bl_idname = "info.spceng_reporter"
+class MEMessageOperator(bpy.types.Operator):
+    bl_idname = "info.me_reporter"
     bl_label = "Message"
     msgtype = bpy.props.StringProperty()
     message = bpy.props.StringProperty()

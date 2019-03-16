@@ -9,7 +9,7 @@ from .merge_xml import CubeBlocksMerger, MergeResult
 from .mount_points import create_mount_point_skeleton
 from .pbr_node_group import getDx11Shader, createDx11ShaderGroup
 from .types import upgradeToNodeMaterial
-from .types import getExportNodeTreeFromContext, getExportNodeTree, data, sceneData, SEMaterialInfo
+from .types import getExportNodeTreeFromContext, getExportNodeTree, data, sceneData, MEMaterialInfo
 from .nodes import BlockDefinitionNode, Exporter, BlockExportTree, getBlockDef, LayerObjectsNode, SeparateLayerObjectsNode, \
     getUsedMaterials
 from .utils import layers, layer_bits, layer_bit, PinnedScene, PinnedSettings
@@ -128,7 +128,7 @@ class BlockExport:
 
 
 class ExportSceneAsBlock(bpy.types.Operator):
-    bl_idname = "export_scene.space_engineers_block"
+    bl_idname = "export_scene.medieval_engineers_block"
     bl_label = "Export Medieval Engineers Block"
     bl_description = "Exports the current scene as a block. Hold ALT to export all scenes."
 
@@ -235,7 +235,7 @@ class ExportSceneAsBlock(bpy.types.Operator):
         return {'FINISHED'}
 
 class UpdateDefinitionsFromBlockScene(bpy.types.Operator):
-    bl_idname = "export_scene.space_engineers_update_definitions"
+    bl_idname = "export_scene.medieval_engineers_update_definitions"
     bl_label = "Update Block Definitions"
     bl_description = "Update the block-definitions in CubeBlocks.sbc."
 
@@ -267,7 +267,7 @@ class UpdateDefinitionsFromBlockScene(bpy.types.Operator):
             return False
 
         tree = getExportNodeTreeFromContext(context)
-        if tree is None or not any(n for n in tree.nodes if n.bl_idname == "SEBlockDefNode"):
+        if tree is None or not any(n for n in tree.nodes if n.bl_idname == "MEBlockDefNode"):
             return False
 
         return True
@@ -313,7 +313,7 @@ class UpdateDefinitionsFromBlockScene(bpy.types.Operator):
         return {'FINISHED'}
 
 class AddDefaultExportNodes(bpy.types.Operator):
-    bl_idname = "export_scene.space_engineers_export_nodes"
+    bl_idname = "export_scene.medieval_engineers_export_nodes"
     bl_label = "Add Default Export-Settings"
     bl_description = "Creates a new exporter node-tree with default settings."
 
@@ -336,7 +336,7 @@ class AddDefaultExportNodes(bpy.types.Operator):
         return {'FINISHED'}
 
 class NameLayersFromExportNodes(bpy.types.Operator):
-    bl_idname = "object.space_engineers_layer_names"
+    bl_idname = "object.medieval_engineers_layer_names"
     bl_label = "Name Layers after Export Nodes"
     bl_description = "If the Layer Manager addon is enabled, " \
                      "this names the layers of the current scene after the export-nodes that read from them."
@@ -366,7 +366,7 @@ class NameLayersFromExportNodes(bpy.types.Operator):
         return {'FINISHED'}
 
 class ConfigureEmptyAsVolumeHandle(bpy.types.Operator):
-    bl_idname = 'object.spceng_empty_with_volume'
+    bl_idname = 'object.me_empty_with_volume'
     bl_label = 'Configure as volumetric handle'
     bl_options = {'REGISTER'}
     bl_description = \
@@ -385,7 +385,7 @@ class ConfigureEmptyAsVolumeHandle(bpy.types.Operator):
         return {'FINISHED'}
 
 class AddMountPointSkeleton(bpy.types.Operator):
-    bl_idname = 'object.spceng_mountpoint_add'
+    bl_idname = 'object.me_mountpoint_add'
     bl_label = 'Mount-Points'
     bl_options = {'REGISTER'}
     bl_description = \
@@ -417,7 +417,7 @@ class AddMountPointSkeleton(bpy.types.Operator):
         return {'FINISHED'}
 
 class SetupGrid(bpy.types.Operator):
-    bl_idname = 'view3d.spceng_setup_grid'
+    bl_idname = 'view3d.me_setup_grid'
     bl_label = 'Set up Grid'
     bl_options = {'REGISTER'}
     bl_description = \
@@ -436,14 +436,14 @@ class SetupGrid(bpy.types.Operator):
         return {'FINISHED'}
 
 class CheckForUpdatableMaterials(bpy.types.Operator):
-    bl_idname = "info.spceng_check_mat_update"
-    bl_label = "SE: Check for Updatable Materials"
+    bl_idname = "info.me_check_mat_update"
+    bl_label = "ME: Check for Updatable Materials"
 
     def execute(self, context):
         count = 0
         self.report({'OPERATOR'}, "Checking materials that are used by blocks...")
         for mat in getUsedMaterials():
-            matInfo = SEMaterialInfo(mat)
+            matInfo = MEMaterialInfo(mat)
             if matInfo.isOldMaterial:
                 count += 1
                 self.report({'OPERATOR'}, "Material '%s' could be upgraded to use nodes." % (mat.name))
@@ -451,13 +451,13 @@ class CheckForUpdatableMaterials(bpy.types.Operator):
         return {'FINISHED'}
 
 class UpdatableToNodesMaterials(bpy.types.Operator):
-    bl_idname = "info.spceng_mat_upgrade"
-    bl_label = "SE: Upgrade All Materials to use Nodes"
+    bl_idname = "info.me_mat_upgrade"
+    bl_label = "ME: Upgrade All Materials to use Nodes"
 
     def execute(self, context):
         count = 0
         for mat in getUsedMaterials():
-            matInfo = SEMaterialInfo(mat)
+            matInfo = MEMaterialInfo(mat)
             if matInfo.isOldMaterial:
                 count += 1
                 upgradeToNodeMaterial(mat)
@@ -466,8 +466,8 @@ class UpdatableToNodesMaterials(bpy.types.Operator):
         return {'FINISHED'}
 
 class UpdateShadersAndNodesMaterials(bpy.types.Operator):
-    bl_idname = "info.spceng_node_mat_upgrade"
-    bl_label = "SE: Update Shaders and Node Materials"
+    bl_idname = "info.me_node_mat_upgrade"
+    bl_label = "ME: Update Shaders and Node Materials"
 
     def execute(self, context):
         dx11Shader = getDx11Shader(create=False)
@@ -477,7 +477,7 @@ class UpdateShadersAndNodesMaterials(bpy.types.Operator):
 
         count = 0
         for mat in getUsedMaterials():
-            matInfo = SEMaterialInfo(mat)
+            matInfo = MEMaterialInfo(mat)
             if not matInfo.isOldMaterial:
                 count += 1
                 upgradeToNodeMaterial(mat)
@@ -486,7 +486,7 @@ class UpdateShadersAndNodesMaterials(bpy.types.Operator):
         return {'FINISHED'}
 
 class SetupMaterial(bpy.types.Operator):
-    bl_idname = "material.spceng_material_setup"
+    bl_idname = "material.me_material_setup"
     bl_label = "Reset to Medieval Engineers Layout"
     bl_icon = "NODETREE"
     bl_description = "Add texture-image nodes as requried by Medieval Engineers. " \
