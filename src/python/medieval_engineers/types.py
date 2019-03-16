@@ -62,7 +62,7 @@ def getBaseDir(scene):
 
 versions = {
     '_' : (
-        Version(weburl='https://github.com/harag-on-steam/se-blender/releases'),
+        Version(weburl='https://github.com/adamb70/me-blender/releases'),
         ('_', '(no version-info)', "Click 'Refresh' to download version-information", 'QUESTION', 0)
     )
 }
@@ -186,7 +186,7 @@ class MEAddonPreferences(bpy.types.AddonPreferences):
             row.label(icon='INFO', text="You are using a pre-release.")
 
         op = row.operator('wm.url_open', icon='URL', text="Show all versions")
-        op.url = 'https://github.com/harag-on-steam/se-blender/releases'
+        op.url = 'https://github.com/adamb70/me-blender/releases'
 
 
 def prefs() -> MEAddonPreferences:
@@ -201,7 +201,7 @@ class MECheckVersionOnline(bpy.types.Operator):
         global versions, latestRelease, latestPreRelease
 
         try:
-            vers, latestRelease, latestPreRelease = versionsOnGitHub("harag-on-steam", "se-blender")
+            vers, latestRelease, latestPreRelease = versionsOnGitHub("adamb70", "me-blender")
         except requests.RequestException as re:
             self.report({'ERROR'}, str(re))
             return {'FINISHED'}

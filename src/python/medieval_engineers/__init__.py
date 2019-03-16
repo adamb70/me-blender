@@ -1,12 +1,12 @@
 bl_info = {
     "name": "Block Tools",
 	"description": "Tools to construct in-game blocks for the game Medieval Engineers",
-	"author": "Harag",
-	"version": (1, 0, 0),
+	"author": "Harag, ablindman",
+	"version": (1, 1, 0),
     "blender": (2, 79, 0),
 	"location": "Properties > Scene, Material, Empty | Tools > Create | Node Editor",
-	"wiki_url": "http://harag-on-steam.github.io/se-blender/",
-	"tracker_url": "https://github.com/harag-on-steam/se-blender/issues",
+	"wiki_url": "https://adamb70.github.io/me-blender/",
+	"tracker_url": "https://github.com/adamb70/me-blender/issues/",
     "category": "Medieval Engineers",
 }
 
