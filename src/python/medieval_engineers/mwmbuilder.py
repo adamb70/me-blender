@@ -60,8 +60,8 @@ def material_xml(settings, mat, file=None, node=None):
             param(label, value)
 
     param("Technique", _material_technique(d.technique))
-    param("SpecularIntensity", _floatstr(m.specularIntensity))
-    param("SpecularPower", _floatstr(m.specularPower))
+    param("SpecularIntensity", _floatstr(0.0))
+    param("SpecularPower", _floatstr(0.0))
     param_if_not_zero("ParallaxHeight", _floatstr(m.parallaxHeight))
     param_if_not_zero("ParallaxBackOffset", _floatstr(m.parallaxBackOffset))
     param_if_not_zero("WindScale", _floatstr(m.windScale))
@@ -141,8 +141,8 @@ def mwmbuilder_xml(settings, material_elements, lod_elements, rescale_factor: fl
     param("Centered", "false")
     if rotation_y:
         param("RotationY", str(round(rotation_y, 3)))
-    param("SpecularPower", _floatstr(d.block_specular_power))
-    param("SpecularShininess", _floatstr(d.block_specular_shininess))
+    param("SpecularPower", _floatstr(0.0))
+    param("SpecularShininess", _floatstr(0.0))
 
     for mat in material_elements:
         e.append(mat)

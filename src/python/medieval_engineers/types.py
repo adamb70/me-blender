@@ -240,9 +240,6 @@ class MESceneProperties(bpy.types.PropertyGroup):
     block_size =  bpy.props.EnumProperty( items=BLOCK_SIZE, default='SCALE_DOWN', name="Block Size")
     block_dimensions = bpy.props.IntVectorProperty( default=(1,1,1), min=1, description="Block Dimensions", subtype="TRANSLATION")
 
-    block_specular_power = bpy.props.FloatProperty( min=0.0, description="per block specular power", )
-    block_specular_shininess = bpy.props.FloatProperty( min=0.0, description="per block specular shininess", )
-
     # legacy layer-masks, not visible in UI
     main_layers =         bpy.props.BoolVectorProperty(subtype='LAYER', size=20, default=layers(0b10000000000000000000), 
                                 name="Main Block", description="All meshes and empties on these layers will be part of the main block model.")
@@ -328,12 +325,6 @@ class DATA_PT_me_scene(bpy.types.Panel):
             col.enabled =  me.block_size == 'SMALL' or me.block_size == 'SCALE_DOWN'
             col.label(text="Small SubtypeId")
             col.prop(me, 'small_subtypeid', text="")
-
-        col = layout.column()
-        col.label(text="Block Specular")
-        split = col.split()
-        split.column().prop(me, "block_specular_power", text="Power")
-        split.column().prop(me, "block_specular_shininess", text="Shininess")
 
         layout.separator()
 
@@ -507,8 +498,6 @@ class MEMaterialProperties(bpy.types.PropertyGroup):
 
     # the material might be a node material and have no diffuse color, so define our own
     diffuse_color = bpy.props.FloatVectorProperty( subtype="COLOR", default=(1.0, 1.0, 1.0), min=0.0, max=1.0, name="Diffuse Color", )
-    specular_power = bpy.props.FloatProperty( min=0.0, name="Specular Power", description="per material specular power", )
-    specular_intensity = bpy.props.FloatProperty( min=0.0, name="Specular Intensity", description="per material specular intensity", )
     parallax_height = bpy.props.FloatProperty( min=0.0, name="Parallax Height", description="per material parallax height", )
     parallax_back_offset = bpy.props.FloatProperty( min=0.0, name="Parallax Back Offset", description="per material parallax offset", )
     wind_scale = bpy.props.FloatProperty( min=0.0, name="Wind Scale", description="per material wind scale", )
@@ -536,8 +525,6 @@ class MEMaterialInfo:
             self.altTextureNodes = imageNodes(nodes, alt=True)
             self.dx11Shader = getDx11ShaderGroup(tree)
             self.diffuseColorNode = firstMatching(nodes, bpy.types.ShaderNodeRGB, "DiffuseColor")
-            self.specularIntensityNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "SpecularIntensity")
-            self.specularPowerNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "SpecularPower")
             self.parallaxHeightNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "ParallaxHeight")
             self.parallaxBackOffsetNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "ParallaxBackOffset")
             self.windScaleNode = firstMatching(nodes, bpy.types.ShaderNodeValue, "WindScale")
@@ -547,8 +534,6 @@ class MEMaterialInfo:
             self.altTextureNodes = {}
             self.dx11Shader = None
             self.diffuseColorNode = None
-            self.specularIntensityNode = None
-            self.specularPowerNode = None
             self.parallaxHeightNode = None
             self.parallaxBackOffsetNode = None
             self.windScaleNode = None
@@ -566,8 +551,6 @@ class MEMaterialInfo:
 
         d = data(self.material)
         self.diffuseColor = tuple(c for c in val(self.diffuseColorNode)) if self.diffuseColorNode else d.diffuse_color
-        self.specularIntensity = val(self.specularIntensityNode) if self.specularIntensityNode else d.specular_intensity
-        self.specularPower = val(self.specularPowerNode) if self.specularPowerNode else d.specular_power
         self.parallaxHeight = val(self.parallaxHeight) if self.parallaxHeightNode else d.parallax_height
         self.parallaxBackOffset = val(self.parallaxBackOffset) if self.parallaxBackOffsetNode else d.parallax_back_offset
         self.windScale = val(self.windScale) if self.windScaleNode else d.wind_scale
@@ -618,10 +601,6 @@ def upgradeToNodeMaterial(material: bpy.types.Material):
 
     if matInfo.diffuseColorNode:
         matInfo.diffuseColorNode.outputs[0].default_value = rgba(matInfoBefore.diffuseColor)
-    if matInfo.specularIntensityNode:
-        matInfo.specularIntensityNode.outputs[0].default_value = matInfoBefore.specularIntensity
-    if matInfo.specularPowerNode:
-        matInfo.specularPowerNode.outputs[0].default_value = matInfoBefore.specularPower
     if matInfo.parallaxHeightNode:
         matInfo.parallaxHeightNode.outputs[0].default_value = matInfoBefore.parallaxHeight
     if matInfo.parallaxBackOffsetNode:
@@ -707,18 +686,6 @@ class DATA_PT_me_material(bpy.types.Panel):
             layout.operator("cycles.use_shading_nodes", icon="NODETREE")
 
         layout.separator()
-
-        split = layout.split(0.25)
-        split.label("Specular")
-        split = split.split()
-        if matInfo.specularIntensityNode:
-            split.column().prop(matInfo.specularIntensityNode.outputs[0], "default_value", text="Intensity")
-        else:
-            split.column().prop(d, "specular_intensity", text="Intensity")
-        if matInfo.specularPowerNode:
-            split.column().prop(matInfo.specularPowerNode.outputs[0], "default_value", text="Power")
-        else:
-            split.column().prop(d, "specular_power", text="Power")
 
         split = layout.split(0.25)
         split.label("Parallax")
