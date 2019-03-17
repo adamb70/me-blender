@@ -1,0 +1,110 @@
+html {
+  scrollbar-face-color: #646464;
+  scrollbar-base-color: #646464;
+  scrollbar-3dlight-color: #646464;
+  scrollbar-highlight-color: #646464;
+  scrollbar-track-color: #2b2b2b;
+  scrollbar-arrow-color: #2b2b2b;
+  scrollbar-shadow-color: #646464;
+  scrollbar-dark-shadow-color: #646464;
+  scrollbar-color: #646464 #2b2b2b;
+}
+
+body {
+    background-color: #242424;
+    color: #c3c3c3;
+}
+
+*:not(pre) > code {
+    font-size: 1rem;
+    color: #b3b1b1;
+    background-color: #3e3e3e;
+    padding: 0 0.3rem;
+}
+
+.admonitionblock > table td.content {
+    color: #b77351;
+}
+table tr.even, table tr.alt, table tr:nth-of-type(even) {
+    background-color: rgba(248, 248, 247, 0.02);
+}
+
+a {
+    color: #6c9fd2;
+}
+
+.keyseq {
+    color: #b77351;
+}
+
+h1, h2, h3, h4, h5, #toctitle {
+    color: #ecac57;
+}
+
+#header > h1:first-child {
+    color: #ecac57;
+}
+
+.paragraph.lead > p, #preamble > .sectionbody > .paragraph:first-of-type p {
+    color: #f1f1f1;
+}
+
+#toc.toc2 {
+    background-color: #171717;
+}
+
+#toc a {
+    color: #9db3ca;
+}
+
+#toc .sectlevel1 > li {
+    padding-top: 5px;
+}
+
+#toc .sectlevel1 > li > a {
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+.thumb, .th {
+    border-color: #727272;
+    box-shadow: none;
+}
+
+.featherlight .featherlight-content {
+    background-color: #242424 !important;
+}
+
+.admonitionblock td.icon .icon-tip:before {
+    color: #c7c232;
+    text-shadow: none;
+}
+.admonitionblock td.icon .icon-note:before {
+    color: #3a6ebf;
+}
+
+pre.highlight {
+    -webkit-border-radius: 20px;
+    -moz-border-radius: 20px;
+    border-radius: 20px;
+    border: 1px solid #3e3e3e;
+}
+pre.CodeRay {
+    background-color: #2f2f2f !important;
+}
+pre > code {
+    color: #e8e8e8e6;
+}
+.CodeRay .attribute-name {
+    color: #6a8dc3
+}
+
+
+
+::-webkit-scrollbar { width: 12px; height: 3px;}
+::-webkit-scrollbar-button {  background-color: #666; }
+::-webkit-scrollbar-track {  background-color: #646464;}
+::-webkit-scrollbar-track-piece { background-color: #2b2b2b;}
+::-webkit-scrollbar-thumb { height: 50px; background-color: #666;}
+::-webkit-scrollbar-corner { background-color: #646464;}
+::-webkit-resizer { background-color: #666;}
