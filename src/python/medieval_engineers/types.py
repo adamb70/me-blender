@@ -498,10 +498,10 @@ class MEMaterialProperties(bpy.types.PropertyGroup):
 
     # the material might be a node material and have no diffuse color, so define our own
     diffuse_color = bpy.props.FloatVectorProperty( subtype="COLOR", default=(1.0, 1.0, 1.0), min=0.0, max=1.0, name="Diffuse Color", )
-    parallax_height = bpy.props.FloatProperty( min=0.0, name="Parallax Height", description="per material parallax height", )
-    parallax_back_offset = bpy.props.FloatProperty( min=0.0, name="Parallax Back Offset", description="per material parallax offset", )
-    wind_scale = bpy.props.FloatProperty( min=0.0, name="Wind Scale", description="per material wind scale", )
-    wind_frequency = bpy.props.FloatProperty( min=0.0, name="Wind Frequency", description="per material wind frequency", )
+    parallax_height = bpy.props.FloatProperty( min=0.0, name="Parallax Height", description="per material parallax height", precision=4)
+    parallax_back_offset = bpy.props.FloatProperty( min=0.0, name="Parallax Back Offset", description="per material parallax offset", precision=4)
+    wind_scale = bpy.props.FloatProperty( min=0.0, name="Wind Scale", description="per material wind scale", precision=3)
+    wind_frequency = bpy.props.FloatProperty( min=0.0, name="Wind Frequency", description="per material wind frequency", precision=3)
 
     glass_material_ccw = bpy.props.StringProperty(
         name="Outward Facing Material", 

@@ -39,7 +39,7 @@ def derive_texture_path(settings, filepath):
     return image_path
 
 def _floatstr(f):
-    return str(round(f, 2))
+    return str(round(f, 6))
 
 # fixes the misspelled constant in types.py without the need to update the value in existing .blend files
 def _material_technique(technique):
