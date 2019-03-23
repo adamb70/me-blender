@@ -84,21 +84,20 @@ def material_xml(settings, mat, file=None, node=None):
     if m.couldDefaultNormalTexture and not TextureType.Normal in m.images:
         m.images[TextureType.Normal] = ''
 
+    # load material library file only once
+    xmlrefpath = bpy.path.abspath(bpy.context.user_preferences.addons['medieval_engineers'].preferences.materialref)
+    xmlref = ElementTree.parse(xmlrefpath).getroot()
+
     for texType in TextureType:
         filepath = m.images.get(texType, None)
         
         if filepath is None:
-            xmlrefpath = bpy.path.abspath(bpy.context.user_preferences.addons['medieval_engineers'].preferences.materialref)
-            if not xmlrefpath:  # don't want it failing if we don't have a file assigned
-                xmlrefpath = None
-                
-            if not xmlrefpath is None:
-                texTypeS = (texType.name + "Texture")
-                xmlref = ElementTree.parse(xmlrefpath).getroot()
+            if xmlrefpath:
+                texTypeS = texType.name + "Texture"
                 refmaterial = xmlref.find('.//Material[@Name="%s"]' % mat.name)
-                if not refmaterial is None:
+                if refmaterial is not None:
                     refmatpath = refmaterial.find('.//Parameter[@Name="%s"]' % texTypeS)
-                    if not refmatpath is None:
+                    if refmatpath is not None:
                         filepath = refmatpath.text
         
         if filepath is not None:

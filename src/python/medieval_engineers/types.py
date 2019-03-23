@@ -138,19 +138,12 @@ class MEAddonPreferences(bpy.types.AddonPreferences):
         col.alert = not check_path(self.mwmbuilder, expectedBaseName='MwmBuilder.exe')
         col.prop(self, 'mwmbuilder')
         col.alert = False
-        
 
         col = layout.column()
         col.label(text="Extras", icon="MATERIAL")
-        #col.alert = not check_path(self.materialref, expectedBaseName='*.xml')
+        col.alert = not check_path(self.materialref, matchExtension='.xml')
         col.prop(self, 'materialref')
-        col.alert=False
-        #row = col.row()
-        #row.alignment = 'RIGHT'
-        #row.prop(self, 'materialref')
-        #
-        #op = row.operator('wm.url_open', icon="URL", text="more details")
-        #op.url = 'http://forums.keenswh.com/post/?id=7197128&trail=18#post1285656779'
+        col.alert = False
 
         col = layout.column()
         col.label(text="Havok Content Tools", icon="PHYSICS")

@@ -318,7 +318,7 @@ def md5sum(filepath):
             md5.update(buf)
     return md5.hexdigest()
 
-def check_path(path, isDirectory=False, expectedBaseName=None, subpathExists=None, emptyOk=True):
+def check_path(path, isDirectory=False, expectedBaseName=None, subpathExists=None, matchExtension=None, emptyOk=True):
     if not path:
         return emptyOk
 
@@ -331,6 +331,11 @@ def check_path(path, isDirectory=False, expectedBaseName=None, subpathExists=Non
 
     if subpathExists:
         result = result and os.path.exists(os.path.join(path, subpathExists))
+
+    if matchExtension:
+        if not matchExtension.startswith('.'):
+            matchExtension = '.' + matchExtension
+        result = result and os.path.splitext(path)[1] == matchExtension
 
     return result
 
