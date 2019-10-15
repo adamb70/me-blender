@@ -2,8 +2,8 @@ bl_info = {
     "name": "Block Tools",
 	"description": "Tools to construct in-game blocks for the game Medieval Engineers",
 	"author": "Harag, ablindman",
-	"version": (1, 1, 2),
-    "blender": (2, 79, 0),
+	"version": (2, 0, 0),
+    "blender": (2, 80, 0),
 	"location": "Properties > Scene, Material, Empty | Tools > Create | Node Editor",
 	"wiki_url": "https://adamb70.github.io/me-blender/",
 	"tracker_url": "https://github.com/adamb70/me-blender/issues/",
@@ -26,7 +26,6 @@ if not reload('utils'): from . import utils
 if not reload('texture_files'): from . import texture_files
 if not reload('pbr_node_group'): from . import pbr_node_group
 if not reload('types'): from . import types
-if not reload('mount_points'): from . import mount_points
 if not reload('mwmbuilder'): from . import mwmbuilder
 if not reload('fbx'): from . import fbx
 if not reload('havok_options'): from . import havok_options
@@ -46,8 +45,9 @@ version = versions.Version(version=bl_info['version'], prerelease=False, qualifi
 import bpy
 
 class MEView3DToolsPanel(bpy.types.Panel):
+    bl_idname = 'MEVIEW_PT_3DTOOLS'
     bl_space_type = 'VIEW_3D'
-    bl_region_type = 'TOOLS'
+    bl_region_type = 'UI'
     bl_category = "Create"
     bl_context = "objectmode"
     bl_label = "Medieval Engineers"
@@ -66,8 +66,6 @@ class MEView3DToolsPanel(bpy.types.Panel):
         space = context.space_data
         if space.grid_scale != 1.25 or space.grid_subdivisions != 5:
             col.operator(operators.SetupGrid.bl_idname, icon='GRID')
-
-        col.operator(operators.AddMountPointSkeleton.bl_idname, icon='FACESEL')
 
         if not data.is_block:
             col.separator()
@@ -107,25 +105,21 @@ def register():
     register_class(types.MECheckVersionOnline)
     operators.register()
 
-    bpy.types.INFO_MT_file_export.append(menu_func_export)
+    bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
 
     nodes.register()
 
     register_class(MEView3DToolsPanel)
 
-    mount_points.enable_draw_callback()
-
 
 def unregister():
     from bpy.utils import unregister_class
-
-    mount_points.disable_draw_callback()
 
     unregister_class(MEView3DToolsPanel)
 
     nodes.unregister()
 
-    bpy.types.INFO_MT_file_export.remove(menu_func_export)
+    bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
 
     operators.unregister()
     unregister_class(types.MECheckVersionOnline)

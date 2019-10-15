@@ -10,7 +10,6 @@ from xml.etree import ElementTree
 import shutil
 from mathutils import Matrix
 
-from .mount_points import mount_point_definitions, mount_points_xml
 from .utils import scaleUni, md5sum
 from .types import data, prefs, getBaseDir, MESceneProperties
 from .fbx import save_single
@@ -33,7 +32,7 @@ class MissbehavingToolError(subprocess.SubprocessError):
 
 def tool_path(propertyName, displayName, toolPath=None):
     if None == toolPath:
-        toolPath = getattr(bpy.context.user_preferences.addons['medieval_engineers'].preferences, propertyName)
+        toolPath = getattr(bpy.context.preferences.addons['medieval_engineers'].preferences, propertyName)
 
     if not toolPath:
         raise FileNotFoundError("%s is not configured", (displayName))
@@ -372,7 +371,6 @@ def generateBlockDefXml(
         settings: ExportSettings,
         modelFile: str,
         iconFile: str,
-        mountPointObjects: iter,
         constrModelFiles: iter):
 
     d = data(settings.scene)
@@ -419,10 +417,6 @@ def generateBlockDefXml(
                 constrModelpath = settings.template(settings.names.modelpath, modelfile=constrModelFile)
             eModel = ElementTree.SubElement(constr, 'Model')
             eModel.attrib = OrderedDict([('BuildPercentUpperBound', upperBound), ('File', constrModelpath), ])
-
-    mountpoints = mount_point_definitions(mountPointObjects)
-    if len(mountpoints) > 0:
-        block.append(mount_points_xml(mountpoints))
 
     blockPairName = ElementTree.SubElement(block, 'BlockPairName')
     blockPairName.text = settings.BlockPairName

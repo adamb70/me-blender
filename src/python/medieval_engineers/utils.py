@@ -152,7 +152,7 @@ _rotMinusHalfX = MatrixWithOpposite((
     ( 0.0, -1.0,  0.0,  0.0),
     ( 0.0,  0.0,  0.0,  1.0),
 ))
-_rotFullX = MatrixWithOpposite(_mirrorY * _mirrorZ)
+_rotFullX = MatrixWithOpposite(_mirrorY @ _mirrorZ)
 
 _rotHalfX.opposite = _rotMinusHalfX
 _rotMinusHalfX.opposite = _rotHalfX
@@ -170,7 +170,7 @@ _rotMinusHalfY = MatrixWithOpposite((
     ( 1.0,  0.0,  0.0,  0.0),
     ( 0.0,  0.0,  0.0,  1.0),
 ))
-_rotFullY = MatrixWithOpposite(_mirrorX * _mirrorZ)
+_rotFullY = MatrixWithOpposite(_mirrorX @ _mirrorZ)
 
 _rotHalfY.opposite = _rotMinusHalfY
 _rotMinusHalfY.opposite = _rotHalfY
@@ -188,7 +188,7 @@ _rotMinusHalfZ = MatrixWithOpposite((
     ( 0.0,  0.0,  1.0,  0.0),
     ( 0.0,  0.0,  0.0,  1.0),
 ))
-_rotFullZ = MatrixWithOpposite(_mirrorX * _mirrorY)
+_rotFullZ = MatrixWithOpposite(_mirrorX @ _mirrorY)
 
 _rotHalfZ.opposite = _rotMinusHalfZ
 _rotMinusHalfZ.opposite = _rotHalfZ
@@ -388,8 +388,8 @@ def reportMessage(msgType: str, msg: str):
 class MEMessageOperator(bpy.types.Operator):
     bl_idname = "info.me_reporter"
     bl_label = "Message"
-    msgtype = bpy.props.StringProperty()
-    message = bpy.props.StringProperty()
+    msgtype: bpy.props.StringProperty()
+    message: bpy.props.StringProperty()
 
     def execute(self, context):
         self.report({self.msgtype}, self.message)

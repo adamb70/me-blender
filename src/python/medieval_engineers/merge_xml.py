@@ -304,13 +304,13 @@ class XmlEditor:
 
 BLOCK_ELEMENTS = [
     'Id', 'DisplayName', 'Icon', 'CubeSize', 'BlockTopology', 'Size', 'ModelOffset', 'Model', 'UseModelIntersection',
-    'Components', 'CriticalComponent', 'BuildProgressModels', 'MountPoints', 'BlockPairName',
+    'Components', 'CriticalComponent', 'BuildProgressModels', 'BlockPairName',
     'DeformationRatio', 'EdgeType', 'BuildTimeSeconds', 'DisassembleRatio', 'Public',
 ]
 
 ID_ELEMENTS = ['TypeId', 'SubtypeId']
 
-LIST_ELEMENTS = {'BuildProgressModels', 'MountPoints'}
+LIST_ELEMENTS = {'BuildProgressModels'}
 
 class MergeResult(Enum):
     MERGED = 1

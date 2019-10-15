@@ -7,7 +7,7 @@ from os import makedirs
 from subprocess import CalledProcessError
 from string import Template
 from bpy.props import BoolProperty, EnumProperty, FloatProperty, StringProperty
-from bpy_extras.io_utils import path_reference_mode, orientation_helper_factory
+from bpy_extras.io_utils import path_reference_mode, orientation_helper, ImportHelper
 from .texture_files import TextureType
 from .types import sceneData, data, MEMaterialInfo
 from .utils import layer_bits, layer_bit, scene, first, PinnedScene, reportMessage, exportSettings
@@ -138,14 +138,14 @@ class MESocket:
 class TextSocket(MESocket, TextSource):
     type = "STRING"
 
-    show_editor_if_unlinked = bpy.props.BoolProperty(default=False)
+    show_editor_if_unlinked: bpy.props.BoolProperty(default=False)
     '''Shows an editor for the sockets 'text'-property if this socket is an input socket and is not linked.'''
 
-    text = bpy.props.StringProperty()
+    text: bpy.props.StringProperty()
     '''Provides the socket's string value directly. This is the last resort.'''
-    node_input = bpy.props.StringProperty()
+    node_input: bpy.props.StringProperty()
     '''Gets the string value from the owning node's named input-socket'''
-    node_property = bpy.props.StringProperty()
+    node_property: bpy.props.StringProperty()
     '''Gets the string value from the owning node's named property'''
 
     def getText(self, *args, **kwargs) -> str:
@@ -218,8 +218,8 @@ class ExportSocket(MESocket, Exporter):
         return source.export(settings)
 
 class ObjectsSocket(MESocket, ObjectSource, ParamSource, ReadyState):
-    n = bpy.props.IntProperty(default=-1)
-    layer = bpy.props.IntProperty()
+    n: bpy.props.IntProperty(default=-1)
+    layer: bpy.props.IntProperty()
 
     def getObjects(self, socket: bpy.types.NodeSocket=None):
         if not self.enabled:
@@ -292,7 +292,7 @@ class TemplateStringSocket(bpy.types.NodeSocket, TextSocket):
     bl_label = "Text"
     bl_color = COLOR_TEXT_SKT
 
-    show_editor_if_unlinked = bpy.props.BoolProperty(default=True)
+    show_editor_if_unlinked: bpy.props.BoolProperty(default=True)
 
     def isCompatibleSource(self, socket):
         return isinstance(socket, TextSocket)
@@ -315,13 +315,13 @@ class LodInputSocket(bpy.types.NodeSocket, FileSocket, ExportSocket):
     bl_label = "LOD"
     bl_color = COLOR_MWM_SKT
 
-    distance = bpy.props.IntProperty(
+    distance: bpy.props.IntProperty(
         name="Distance", default=10, min=0,
         description="The distance at which to switch to this level-of-detail")
-    use_qualities = bpy.props.BoolProperty(
+    use_qualities: bpy.props.BoolProperty(
         name="Use Qualities", default=False,
         description="Should this level-of-detail only be used with a subset of render quality profiles?")
-    qualities = bpy.props.EnumProperty(
+    qualities: bpy.props.EnumProperty(
         name="Render Quality",
         items=RENDER_QUALITIES, default={q[0] for q in RENDER_QUALITIES}, options={'ENUM_FLAG'},
         description="Mark the render quality profiles this level-of-detail should be used at")
@@ -380,18 +380,7 @@ class ExportableObjectsSocket(bpy.types.NodeSocket, ObjectsSocket):
 
         return (o for o in super().getObjects(socket) if o.type in object_types)
 
-class MountPointObjectsSocket(bpy.types.NodeSocket, ObjectsSocket):
-    '''selects only objects that have a 'MountPoint' material'''
-    bl_idname = "MEMountPointObjectsSocket"
-    bl_label = "Objects"
-    bl_color = COLOR_OBJECTS_SKT
-    type = 'CUSTOM'
 
-    def getObjects(self, socket: bpy.types.NodeSocket=None):
-        return (o for o in super().getObjects(socket) if 'MountPoint' in o.material_slots)
-
-
-# -------------------------------------------------------------------------------------------------------------------- #
 
 class MENode:
     @classmethod
@@ -465,11 +454,11 @@ class HavokFileNode(bpy.types.Node, MENode, Exporter, ReadyState):
         return settings.cacheValue(hktfile, 'SUCCESS')
 
 
-IOFBXOrientationHelper = orientation_helper_factory("IOFBXOrientationHelper", axis_forward='Z', axis_up='Y') # ME; -Z, Y
 
 # as defined by io_scene_fbx/__init__.py/ExportFBX, can't reuse because the class is a bpy.types.Operator
-class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
-    version = EnumProperty(
+@orientation_helper(axis_forward='Z', axis_up='Y') # ME; -Z, Y
+class FbxExportProperties (bpy.types.PropertyGroup, ImportHelper):
+    version: EnumProperty(
         items=(('BIN7400', "FBX 7.4 binary", "Modern 7.4 binary version"),
                ('ASCII6100', "FBX 6.1 ASCII",
                 "Legacy 6.1 ascii version - WARNING: Deprecated and no more maintained"),
@@ -480,7 +469,7 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
     )
 
     # 7.4 only
-    ui_tab = EnumProperty(
+    ui_tab: EnumProperty(
         items=(('MAIN', "Main", "Main basic settings"),
                ('GEOMETRY', "Geometries", "Geometry-related settings"),
                ('ARMATURE', "Armatures", "Armature-related settings"),
@@ -491,13 +480,13 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
         description="Export options categories",
     )
 
-    use_selection = BoolProperty(
+    use_selection: BoolProperty(
         name="Selected Objects",
         description="Export selected objects on visible layers",
         default=False,
     )
 
-    global_scale = FloatProperty(
+    global_scale: FloatProperty(
         name="Scale",
         description="Scale all data (Some importers do not support scaled armatures!)",
         min=0.001, max=1000.0,
@@ -505,14 +494,14 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
         default=1.0,
     )
     # 7.4 only
-    apply_unit_scale = BoolProperty(
+    apply_unit_scale: BoolProperty(
         name="Apply Unit",
         description="Scale all data according to current Blender size, to match default FBX unit "
                     "(centimeter, some importers do not handle UnitScaleFactor properly)",
         default=False, # ME ; True
     )
     # 7.4 only
-    bake_space_transform = BoolProperty(
+    bake_space_transform: BoolProperty(
         name="!EXPERIMENTAL! Apply Transform",
         description="Bake space transform into object data, avoids getting unwanted rotations to objects when "
                     "target space is not aligned with Blender's space "
@@ -520,7 +509,7 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
         default=False,
     )
 
-    object_types = EnumProperty(
+    object_types: EnumProperty(
         name="Object Types",
         options={'ENUM_FLAG'},
         items=(('EMPTY', "Empty", ""), # 'OUTLINER_OB_EMPTY'
@@ -534,13 +523,13 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
         default={'EMPTY', 'MESH' }, # ME ; {'EMPTY', 'CAMERA', 'LAMP', 'ARMATURE', 'MESH', 'OTHER' },
     )
 
-    use_mesh_modifiers = BoolProperty(
+    use_mesh_modifiers: BoolProperty(
         name="Apply Modifiers",
         description="Apply modifiers to mesh objects (except Armature ones) - "
                     "WARNING: prevents exporting shape keys",
         default=True,
     )
-    mesh_smooth_type = EnumProperty(
+    mesh_smooth_type: EnumProperty(
         name="Smoothing",
         items=(('OFF', "Normals Only", "Export only normals instead of writing edge or face smoothing data"),
                ('FACE', "Face", "Write face smoothing"),
@@ -550,31 +539,31 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
                     "(prefer 'Normals Only' option if your target importer understand split normals)",
         default='OFF',
     )
-    use_mesh_edges = BoolProperty(
+    use_mesh_edges: BoolProperty(
         name="Loose Edges",
         description="Export loose edges (as two-vertices polygons)",
         default=False,
     )
     # 7.4 only
-    use_tspace = BoolProperty(
+    use_tspace: BoolProperty(
         name="Tangent Space",
         description="Add binormal and tangent vectors, together with normal they form the tangent space "
                     "(will only work correctly with tris/quads only meshes!)",
         default=False,
     )
     # 7.4 only
-    use_custom_props = BoolProperty(
+    use_custom_props: BoolProperty(
         name="Custom Properties",
         description="Export custom properties",
         default=False,
     )
-    add_leaf_bones = BoolProperty(
+    add_leaf_bones: BoolProperty(
         name="Add Leaf Bones",
         description="Append a final bone to the end of each chain to specify last bone length "
                     "(use this when you intend to edit the armature from exported data)",
         default=False
     )
-    primary_bone_axis = EnumProperty(
+    primary_bone_axis: EnumProperty(
         name="Primary Bone Axis",
         items=(('X', "X Axis", ""),
                ('Y', "Y Axis", ""),
@@ -585,7 +574,7 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
                ),
         default='X',  # ME ; X
     )
-    secondary_bone_axis = EnumProperty(
+    secondary_bone_axis: EnumProperty(
         name="Secondary Bone Axis",
         items=(('X', "X Axis", ""),
                ('Y', "Y Axis", ""),
@@ -596,12 +585,12 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
                ),
         default='Y', # ME ; X
     )
-    use_armature_deform_only = BoolProperty(
+    use_armature_deform_only: BoolProperty(
         name="Only Deform Bones",
         description="Only write deforming bones (and non-deforming ones when they have deforming children)",
         default=False,
     )
-    armature_nodetype = EnumProperty(
+    armature_nodetype: EnumProperty(
         name="Armature FBXNode Type",
         items=(('NULL', "Null", "'Null' FBX node, similar to Blender's Empty (default)"),
                ('ROOT', "Root", "'Root' FBX node, supposed to be the root of chains of bones..."),
@@ -613,43 +602,43 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
         default='NULL',
     )
     # Anim - 7.4 ;
-    bake_anim = BoolProperty(
+    bake_anim: BoolProperty(
         name="Baked Animation",
         description="Export baked keyframe animation",
         default=False, # ME ; True
     )
-    bake_anim_use_all_bones = BoolProperty(
+    bake_anim_use_all_bones: BoolProperty(
         name="Key All Bones",
         description="Force exporting at least one key of animation for all bones "
                     "(needed with some target applications, like UE4)",
         default=True,
     )
-    bake_anim_use_nla_strips = BoolProperty(
+    bake_anim_use_nla_strips: BoolProperty(
         name="NLA Strips",
         description="Export each non-muted NLA strip as a separated FBX's AnimStack, if any, "
                     "instead of global scene animation",
         default=True,
     )
-    bake_anim_use_all_actions = BoolProperty(
+    bake_anim_use_all_actions: BoolProperty(
         name="All Actions",
         description="Export each action as a separated FBX's AnimStack, instead of global scene animation "
                     "(note that animated objects will get all actions compatible with them, "
                     "others will get no animation at all)",
         default=True,
     )
-    bake_anim_force_startend_keying = BoolProperty(
+    bake_anim_force_startend_keying: BoolProperty(
         name="Force Start/End Keying",
         description="Always add a keyframe at start and end of actions for animated channels",
         default=True,
     )
-    bake_anim_step = FloatProperty(
+    bake_anim_step: FloatProperty(
         name="Sampling Rate",
         description="How often to evaluate animated values (in frames)",
         min=0.01, max=100.0,
         soft_min=0.1, soft_max=10.0,
         default=1.0,
     )
-    bake_anim_simplify_factor = FloatProperty(
+    bake_anim_simplify_factor: FloatProperty(
         name="Simplify",
         description="How much to simplify baked values (0.0 to disable, the higher the more simplified)",
         min=0.0, max=100.0,  # No simplification to up to 10% of current magnitude tolerance.
@@ -657,28 +646,28 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
         default=1.0,  # default: min slope: 0.005, max frame step: 10.
     )
     # Anim - 6.1
-    use_anim = BoolProperty(
+    use_anim: BoolProperty(
         name="Animation",
         description="Export keyframe animation",
         default=False, # ME ; True
     )
-    use_anim_action_all = BoolProperty(
+    use_anim_action_all: BoolProperty(
         name="All Actions",
         description="Export all actions for armatures or just the currently selected action",
         default=True,
     )
-    use_default_take = BoolProperty(
+    use_default_take: BoolProperty(
         name="Default Take",
         description="Export currently assigned object and armature animations into a default take from the scene "
                     "start/end frames",
         default=True,
     )
-    use_anim_optimize = BoolProperty(
+    use_anim_optimize: BoolProperty(
         name="Optimize Keyframes",
         description="Remove double keyframes",
         default=True,
     )
-    anim_optimize_precision = FloatProperty(
+    anim_optimize_precision: FloatProperty(
         name="Precision",
         description="Tolerance for comparing double keyframes (higher for greater accuracy)",
         min=0.0, max=20.0,  # from 10^2 to 10^-18 frames precision.
@@ -688,12 +677,12 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
     # End anim
     path_mode = path_reference_mode
     # 7.4 only
-    embed_textures = BoolProperty(
+    embed_textures: BoolProperty(
         name="Embed Textures",
         description="Embed textures in FBX binary file (only for \"Copy\" path mode!)",
         default=False,
     )
-    batch_mode = EnumProperty(
+    batch_mode: EnumProperty(
         name="Batch Mode",
         items=(('OFF', "Off", "Active scene to file"),
                ('SCENE', "Scene", "Each scene as a file"),
@@ -701,21 +690,21 @@ class FbxExportProperties (bpy.types.PropertyGroup, IOFBXOrientationHelper):
                ),
         default = 'OFF' # ME
     )
-    use_batch_own_dir = BoolProperty(
+    use_batch_own_dir: BoolProperty(
         name="Batch Own Dir",
         description="Create a dir for each exported file",
         default=True,
     )
-    use_metadata = BoolProperty(
+    use_metadata: BoolProperty(
         name="Use Metadata",
         default=True,
         options={'HIDDEN'},
     )
 
 class MwmExportProperties(bpy.types.PropertyGroup):
-    rescale_factor = bpy.props.FloatProperty(name="Rescale Factor", min=0.001, max=1000, soft_min=0.01, soft_max=10, default=0.01,
+    rescale_factor: bpy.props.FloatProperty(name="Rescale Factor", min=0.001, max=1000, soft_min=0.01, soft_max=10, default=0.01,
         description="Instructs MwmBuilder to rescale everything by the given factor. Exporting a character seems to require a value 0.01. The armature must have the same scale.")
-    rotation_y = bpy.props.FloatProperty(name="Rotation Y", min=-1000, max=1000, soft_min=-360, soft_max=360, default=0,
+    rotation_y: bpy.props.FloatProperty(name="Rotation Y", min=-1000, max=1000, soft_min=-360, soft_max=360, default=0,
         description="Instructs MwmBuilder to rotate everything around the Y-axis. Exporting a character seems to require a value of 180°")
 
 class MwmFileNode(bpy.types.Node, MENode, Exporter, ReadyState, Upgradable):
@@ -723,8 +712,8 @@ class MwmFileNode(bpy.types.Node, MENode, Exporter, ReadyState, Upgradable):
     bl_label = "MwmBuilder"
     bl_icon = "EXPORT"
 
-    fbx_settings = bpy.props.PointerProperty(type=FbxExportProperties)
-    mwm_settings = bpy.props.PointerProperty(type=MwmExportProperties)
+    fbx_settings: bpy.props.PointerProperty(type=FbxExportProperties)
+    mwm_settings: bpy.props.PointerProperty(type=MwmExportProperties)
 
     @property
     def object_types(self):
@@ -772,13 +761,13 @@ class MwmFileNode(bpy.types.Node, MENode, Exporter, ReadyState, Upgradable):
 
 
         m = self.mwm_settings
-        layout.label("MwmBuilder Settings")
+        layout.label(text="MwmBuilder Settings")
         layout.prop(m, 'rescale_factor')
         layout.prop(m, 'rotation_y')
 
         layout.separator()
 
-        layout.label("FBX Exporter Settings")
+        layout.label(text="FBX Exporter Settings")
         layout.prop(f, "ui_tab", expand=True)
         if f.ui_tab == 'MAIN':
             # layout.prop(f, "use_selection")
@@ -901,19 +890,19 @@ class TextFilterNode:
         except Exception as e:
             self.is_malformed_regex = str(e)
 
-    pattern = bpy.props.StringProperty(
+    pattern: bpy.props.StringProperty(
         name="Text Pattern",
         description="The text pattern to filter with",
         update=updateIsMalformedRegeEx)
-    use_inverted_match = bpy.props.BoolProperty(
+    use_inverted_match: bpy.props.BoolProperty(
         name="Invert Match",
         description="Only keep objects that do *not* match the pattern?")
-    use_regex = bpy.props.BoolProperty(
+    use_regex: bpy.props.BoolProperty(
         name="Use Regular Expression", default=False,
         description="Is the text pattern a Python regular expression?",
         update=updateIsMalformedRegeEx)
-    is_malformed_regex = bpy.props.StringProperty()
-    use_case_sensitive = bpy.props.BoolProperty(
+    is_malformed_regex: bpy.props.StringProperty()
+    use_case_sensitive: bpy.props.BoolProperty(
         name="Match Case Sensitively", default=False,
         description="Only match case-sensitively?")
 
@@ -937,7 +926,7 @@ class TextFilterNode:
         row2 = row.row(align=True)
         row2.enabled = self.use_regex
         row2.prop(self, "use_case_sensitive", text="", icon="FONT_DATA")
-        invert_icon = "ZOOMOUT" if self.use_inverted_match else "ZOOMIN"
+        invert_icon = "REMOVE" if self.use_inverted_match else "ADD"
         row.prop(self, "use_inverted_match", text="", icon=invert_icon)
         if self.is_malformed_regex:
             layout.label(text=self.is_malformed_regex, icon="ERROR")
@@ -1060,7 +1049,7 @@ class LayerObjectsNode(bpy.types.Node, MENode, ObjectSource, Upgradable):
     bl_icon = "GROUP"
     bl_width_default = 170.0
 
-    layer_mask = bpy.props.BoolVectorProperty(name="Layers", subtype='LAYER', size=20, default=([False] * 20))
+    layer_mask: bpy.props.BoolVectorProperty(name="Layers", subtype='LAYER', size=20, default=([False] * 20))
 
     def init(self, context):
         pin = self.outputs.new(ObjectListSocket.bl_idname, "Objects")
@@ -1103,7 +1092,7 @@ class SeparateLayerObjectsNode(bpy.types.Node, MENode, ObjectSource, Upgradable)
                 pin.name = "Layer %02d \u2192 %d" % (i+1, ordinal)
                 ordinal += 1
 
-    layer_mask = bpy.props.BoolVectorProperty(name="Layers", subtype='LAYER', size=20, default=([False] * 20),
+    layer_mask: bpy.props.BoolVectorProperty(name="Layers", subtype='LAYER', size=20, default=([False] * 20),
                                               update=onLayerMaskUpdate)
 
     def init(self, context):
@@ -1142,7 +1131,6 @@ class BlockDefinitionNode(bpy.types.Node, MENode, Exporter, ReadyState, Upgradab
         inputs.new(MwmFileSocket.bl_idname, "Main Model")
         icon = inputs.new(TemplateStringSocket.bl_idname, "Icon Path")
         icon.text = "//Textures/Icons/${BlockPairName}"
-        inputs.new(MountPointObjectsSocket.bl_idname, "Mount Points")
 
         for i in range(1,11):
             inputs.new(MwmFileSocket.bl_idname, "Constr. Phase %d" % (i))
@@ -1209,10 +1197,6 @@ class BlockDefinitionNode(bpy.types.Node, MENode, Exporter, ReadyState, Upgradab
         iconPath = self.inputs['Icon Path'].getText(settings)
         iconFile = iconPath if iconPath else None
 
-        mountPointsSocket = self.inputs['Mount Points']
-        if mountPointsSocket.is_linked and mountPointsSocket.isEmpty():
-            settings.text("no mount-points included", file=blockdeffile, node=self)
-
         constrModelFiles = [] # maybe stays empty
         for i, socket in enumerate(s for s in self.inputs if s.name.startswith('Constr')):
             if socket.enabled and socket.is_linked:
@@ -1226,7 +1210,6 @@ class BlockDefinitionNode(bpy.types.Node, MENode, Exporter, ReadyState, Upgradab
             settings,
             modelFile,
             iconFile,
-            mountPointsSocket.getObjects(),
             constrModelFiles)
 
         return settings.cacheValue(blockdeffilecontent, xml)
@@ -1246,9 +1229,6 @@ class BlockDefinitionNode(bpy.types.Node, MENode, Exporter, ReadyState, Upgradab
         if not isinstance(source.node, LayerObjectsNode) and not isinstance(source.node):
             return -1
         return next( (i for i, b in enumerate(source.node.layer_mask) if b), -1)
-
-    def getMountPointLayer(self):
-        return self._getLayer(self.inputs['Mount Points'])
 
 # -------------------------------------------------------------------------------------------------------------------- #
 
@@ -1319,7 +1299,6 @@ registered = [
     ObjectListSocket,
     RigidBodyObjectsSocket,
     ExportableObjectsSocket,
-    MountPointObjectsSocket,
 
     LayerObjectsNode,
     SeparateLayerObjectsNode,

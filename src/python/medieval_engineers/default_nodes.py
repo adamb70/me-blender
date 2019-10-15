@@ -66,7 +66,7 @@ def newText(tree, label=None, location=(0,0), text=""):
     txt.width = 190.0
     return txt.outputs[0]
 
-def newBlockDef(tree, label=None, location=(0,0), model=None, mountPoints=None, constrs=[]):
+def newBlockDef(tree, label=None, location=(0,0), model=None, constrs=[]):
     bd = tree.nodes.new(BlockDefinitionNode.bl_idname)
     bd.location = Vector(location)
     bd.width = 220.0
@@ -74,8 +74,6 @@ def newBlockDef(tree, label=None, location=(0,0), model=None, mountPoints=None, 
         bd.label = label
     if not model is None:
         tree.links.new(model, bd.inputs['Main Model'])
-    if not mountPoints is None:
-        tree.links.new(mountPoints, bd.inputs['Mount Points'])
     constrSockets = [s for s in bd.inputs if s.name.startswith('Constr')]
     for constr, socket in zip(constrs, constrSockets):
         tree.links.new(constr, socket)
@@ -88,7 +86,6 @@ def createDefaultTree(tree: BlockExportTree):
     layerPhys   = newCombinedLayers(tree, "Collision",           (-777,  361), 0b01000000000000000000)
     layerLOD    = newSeparateLayers(tree, "Level of Detail",     (-777,  216), 0b00000111000000000000)
     layerConstr = newSeparateLayers(tree, "Construction Phases", (-777, - 96), 0b00000000001110000000)
-    layerMP     = newCombinedLayers(tree, "Mount Points",        ( 173,  283), 0b00100000000000000000)
 
     physics = newHavokConverter(tree, "Havok", (-516, 412), '${SubtypeId}', layerPhys)
 
@@ -103,4 +100,4 @@ def createDefaultTree(tree: BlockExportTree):
     mwmConstrs = [newMwmBuilder(tree, "Mwm Constr%d" % (i+1), (-105, -21 - 128*i), nameConstr, o, physics)
                for i, o in enumerate(layerConstr)]
 
-    newBlockDef(tree, None, (473, 105), mwmMain, layerMP, mwmConstrs)
+    newBlockDef(tree, None, (473, 105), mwmMain, mwmConstrs)

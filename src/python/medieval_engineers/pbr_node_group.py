@@ -163,7 +163,6 @@ class ShaderNodesBuilder:
     def newImageTexture(self, name=None, label=None, location=None, space=None, image=None):
         n = self.newNode(bpy.types.ShaderNodeTexImage, name, label, location)
         if not label is None: n.name = label
-        if not space is None: n.color_space = space.name
         if not image is None: n.image = image
         return (n.outputs[0], n.outputs[1]) # color + alpha
 
@@ -613,7 +612,7 @@ def createMaterialNodeTree(tree: bpy.types.ShaderNodeTree):
     _, addA    = builder.newImageTexture(None, label2(TextureType.AddMaps),     (-200, 350), ImageColorspace.NONE)
     alphaC, _  = builder.newImageTexture(None, label1(TextureType.Alphamask),   (-200, 300), ImageColorspace.NONE)
 
-    addR, addG, _ = builder.newSeparateRgb(None, "Split AddMaps", (0, 400), addC)
+    addR, addG, _ = builder.newSeparateRgb(None, "Split AddMaps", (75, 400), addC)
     addR.node.inputs[0].default_value = (1, 0, 0, 1) # R: no AO, G: no emissivity, B and A unused
 
     dx11 = builder.newNode(bpy.types.ShaderNodeGroup, "DX11Shader", None, (250, 600), create=CreateMode.REPLACE)

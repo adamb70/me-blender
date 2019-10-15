@@ -6,7 +6,6 @@ import bpy
 from bpy.utils import register_class, unregister_class
 from .export import ExportSettings, MissbehavingToolError
 from .merge_xml import CubeBlocksMerger, MergeResult
-from .mount_points import create_mount_point_skeleton
 from .pbr_node_group import getDx11Shader, createDx11ShaderGroup
 from .types import upgradeToNodeMaterial
 from .types import getExportNodeTreeFromContext, getExportNodeTree, data, sceneData, MEMaterialInfo
@@ -132,21 +131,21 @@ class ExportSceneAsBlock(bpy.types.Operator):
     bl_label = "Export Medieval Engineers Block"
     bl_description = "Exports the current scene as a block. Hold ALT to export all scenes."
 
-    directory = bpy.props.StringProperty(subtype='DIR_PATH')
+    directory: bpy.props.StringProperty(subtype='DIR_PATH')
 
-    all_scenes = bpy.props.BoolProperty(
+    all_scenes: bpy.props.BoolProperty(
         name="All Scenes",
         description="Export all scenes that are marked as blocks.")
-    skip_mwmbuilder = bpy.props.BoolProperty(
+    skip_mwmbuilder: bpy.props.BoolProperty(
         name="Skip mwmbuilder",
         description="Export intermediary files but do not run them through mwmbuilder")
-    use_tspace = bpy.props.BoolProperty(
+    use_tspace: bpy.props.BoolProperty(
         name="Tangent Space",
         description="Add binormal and tangent vectors, together with normal they form the tangent space "
                     "(will only work correctly with tris/quads only meshes!)",
         default=False)
 
-    settings_name = bpy.props.StringProperty(
+    settings_name: bpy.props.StringProperty(
         name="Used Settings",
         description="The name of the node-tree that defines the export",
         default="")
@@ -239,20 +238,20 @@ class UpdateDefinitionsFromBlockScene(bpy.types.Operator):
     bl_label = "Update Block Definitions"
     bl_description = "Update the block-definitions in CubeBlocks.sbc."
 
-    filepath = bpy.props.StringProperty(subtype='FILE_PATH')
+    filepath: bpy.props.StringProperty(subtype='FILE_PATH')
 
-    all_scenes = bpy.props.BoolProperty(
+    all_scenes: bpy.props.BoolProperty(
         name="All Scenes",
         description="Update with data from all scenes that are marked as blocks.")
-    create_backup = bpy.props.BoolProperty(
+    create_backup: bpy.props.BoolProperty(
         name="Backup Target File",
         description="Creates a backup of the target file before updating.")
-    allow_renames = bpy.props.BoolProperty(
+    allow_renames: bpy.props.BoolProperty(
         name="Update SubtypeIds",
         description="Renames the SubtypeId if a definition matches by BlockPairName and CubeSize. "
                     "Be aware that this is not backwards-compatible for players!")
 
-    settings_name = bpy.props.StringProperty(
+    settings_name: bpy.props.StringProperty(
         name="Used Settings",
         description="The name of the node-tree that defines the export",
         default="MwmExportMedieval")
@@ -384,37 +383,6 @@ class ConfigureEmptyAsVolumeHandle(bpy.types.Operator):
         ob.empty_draw_size = 0.5
         return {'FINISHED'}
 
-class AddMountPointSkeleton(bpy.types.Operator):
-    bl_idname = 'object.me_mountpoint_add'
-    bl_label = 'Mount-Points'
-    bl_options = {'REGISTER'}
-    bl_description = \
-        "Creates an object with six rectangular mount-point faces, one for each side of the block. " \
-        "Duplicate these faces in edit-mode or use modifiers to create additional mount-points."
-
-    def execute(self, context):
-        s = context.scene
-
-        ob = create_mount_point_skeleton()
-        ob.location = (0, 0, 0)
-        ob.lock_location = (True, True, True)
-        ob.lock_rotation = (True, True, True)
-        ob.lock_scale = (True, True, True)
-
-        s.objects.link(ob)
-
-        try:
-            layer = getBlockDef(sceneData(s).getExportNodeTree()).getMountPointLayer()
-        except ValueError:
-            layer = -1
-
-        if layer >= 0:
-            ob.layers = layers(layer_bit(layer))
-            s.layers = layers(layer_bits(s.layers) | layer_bit(layer))
-        else:
-            self.report({'WARNING'}, "No mount-point layer defined. Objects were created on active layer.")
-
-        return {'FINISHED'}
 
 class SetupGrid(bpy.types.Operator):
     bl_idname = 'view3d.me_setup_grid'
@@ -511,7 +479,6 @@ registered = [
     ConfigureEmptyAsVolumeHandle,
     ExportSceneAsBlock,
     UpdateDefinitionsFromBlockScene,
-    AddMountPointSkeleton,
     SetupGrid,
     SetupMaterial,
     CheckForUpdatableMaterials,

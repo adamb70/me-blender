@@ -61,7 +61,7 @@ def getBaseDir(scene):
 
 
 versions = {
-    '_' : (
+    '_': (
         Version(weburl='https://github.com/adamb70/me-blender/releases'),
         ('_', '(no version-info)', "Click 'Refresh' to download version-information", 'QUESTION', 0)
     )
@@ -74,43 +74,45 @@ def version_icon(v: Version) -> str:
     import medieval_engineers as addon
     if not v:
         return 'NONE'
-    if v == latestRelease:
-        return 'FILE_TICK' if addon.version == v else 'ERROR' if addon.version < v else 'SPACE2'
-    if v and v.prerelease:
-        return 'FILE_TICK' if addon.version == v else 'VISIBLE_IPO_ON'
-    return 'SPACE3'
+    if v.prerelease:
+        return 'FORWARD' if addon.version == v else 'HIDE_OFF'
+    if v > addon.version:
+        return 'ERROR' if v == latestRelease else 'DOT'
+    if v == addon.version:
+        return 'FORWARD'
+    return 'DOT'
 
 class MEAddonPreferences(bpy.types.AddonPreferences):
     bl_idname = __package__
 
-    seDir = bpy.props.StringProperty(
+    seDir: bpy.props.StringProperty(
         name="Game Directory",
         subtype='DIR_PATH',
         description='The base directory of the game. Probably <Steam>\\SteamApps\\Common\\Medieval Engineers',
     )
-    mwmbuilder = bpy.props.StringProperty(
+    mwmbuilder: bpy.props.StringProperty(
         name="MWM Builder",
         subtype='FILE_PATH',
         description='Locate MwmBuilder.exe. Probably in <Game Directory>\\Tools\\MwmBuilder\\'
     )
-    materialref = bpy.props.StringProperty(
+    materialref: bpy.props.StringProperty(
         name="Material Reference XML",
         subtype='FILE_PATH',
         description='Link to an external material reference XML file.'
     )
-    fix_dir_bug = bpy.props.BoolProperty(
+    fix_dir_bug: bpy.props.BoolProperty(
         name="workaround for output-directory bug",
         description="Without the /o option mwmbuilder has been crashing since game version 01.059. "
                     "The option itself has a bug that outputs files in the wrong directory. "
                     "Only enable this for the broken version of mwmbuilder.",
     )
 
-    havokFbxImporter = bpy.props.StringProperty(
+    havokFbxImporter: bpy.props.StringProperty(
         name="FBX Importer",
         subtype='FILE_PATH',
         description='Locate FBXImporter.exe',
     )
-    havokFilterMgr = bpy.props.StringProperty(
+    havokFilterMgr: bpy.props.StringProperty(
         name="Standalone Filter Manager",
         subtype='FILE_PATH',
         description='Locate hctStandAloneFilterManager.exe. Probably in C:\\Program Files\\Havok\\HavokContentTools\\',
@@ -119,13 +121,13 @@ class MEAddonPreferences(bpy.types.AddonPreferences):
     def versions_enum(self, context):
         return [info[1] for info in versions.values()]
 
-    selected_version = bpy.props.EnumProperty(items=versions_enum, name="Versions")
+    selected_version: bpy.props.EnumProperty(items=versions_enum, name="Versions")
 
     def draw(self, context):
         layout = self.layout
 
         col = layout.column()
-        col.label(text="Medieval Engineers", icon="GAME")
+        col.label(text="Medieval Engineers", icon="FILE_3D")
         col.alert = not check_path(self.seDir, isDirectory=True, subpathExists='Bin64/MedievalEngineers.exe')
         col.prop(self, 'seDir')
 
@@ -155,10 +157,10 @@ class MEAddonPreferences(bpy.types.AddonPreferences):
 
         layout.separator()
 
-        split = layout.split(percentage=0.42)
+        split = layout.split(factor=0.42)
 
         # ----
-        split2 = split.split(percentage=0.60, align=True)
+        split2 = split.split(factor=0.60, align=True)
 
         row = split2.row(align=True)
         versionInfo = versions[self.selected_version]
@@ -183,7 +185,7 @@ class MEAddonPreferences(bpy.types.AddonPreferences):
 
 
 def prefs() -> MEAddonPreferences:
-    return bpy.context.user_preferences.addons[__package__].preferences
+    return bpy.context.preferences.addons[__package__].preferences
 
 class MECheckVersionOnline(bpy.types.Operator):
     bl_idname = "wm.medieval_engineers_check_version"
@@ -227,35 +229,32 @@ BLOCK_SIZE = [
 class MESceneProperties(bpy.types.PropertyGroup):
     name = PROP_GROUP
     
-    is_block = bpy.props.BoolProperty( default=False, name="Export as Block", 
+    is_block: bpy.props.BoolProperty( default=False, name="Export as Block",
         description="Does this scene contain the models for a block in Medieval Engineers?")
 
-    block_size =  bpy.props.EnumProperty( items=BLOCK_SIZE, default='SCALE_DOWN', name="Block Size")
-    block_dimensions = bpy.props.IntVectorProperty( default=(1,1,1), min=1, description="Block Dimensions", subtype="TRANSLATION")
+    block_size:  bpy.props.EnumProperty( items=BLOCK_SIZE, default='SCALE_DOWN', name="Block Size")
+    block_dimensions: bpy.props.IntVectorProperty( default=(1,1,1), min=1, description="Block Dimensions", subtype="TRANSLATION")
 
     # legacy layer-masks, not visible in UI
-    main_layers =         bpy.props.BoolVectorProperty(subtype='LAYER', size=20, default=layers(0b10000000000000000000), 
+    main_layers:         bpy.props.BoolVectorProperty(subtype='LAYER', size=20, default=layers(0b10000000000000000000),
                                 name="Main Block", description="All meshes and empties on these layers will be part of the main block model.")
-    physics_layers =      bpy.props.BoolVectorProperty(subtype='LAYER', size=20, default=layers(0b01000000000000000000), 
+    physics_layers:      bpy.props.BoolVectorProperty(subtype='LAYER', size=20, default=layers(0b01000000000000000000),
                                 name="Collision", description="All meshes on these layers that have rigid bodies will contribute to the Havok collision model.")
-    mount_points_layers = bpy.props.BoolVectorProperty(subtype='LAYER', size=20, default=layers(0b00100000000000000000), 
-                                name="Mount Points", description="Meshes on these layers are searched for MountPoint polygons. "
-                                                                 "Also, if one of these layers is visible the block-dimension box is shown.")
-    construction_layers = bpy.props.BoolVectorProperty(subtype='LAYER', size=20, default=layers(0b00000000001110000000),
+    construction_layers: bpy.props.BoolVectorProperty(subtype='LAYER', size=20, default=layers(0b00000000001110000000),
                                 name="Construction Stages", description="Each layer in this set represents one construction stage. Only meshes and empties are included.")
 
-    show_block_bounds = bpy.props.BoolProperty( default=True, name="Show Block Bounds", )
+    show_block_bounds: bpy.props.BoolProperty( default=True, name="Show Block Bounds", )
 
-    use_custom_subtypeids = bpy.props.BoolProperty( default=False, name="Use custom SubtypeIds",
+    use_custom_subtypeids: bpy.props.BoolProperty( default=False, name="Use custom SubtypeIds",
         description="This is only useful if you have to keep a specific block SubetypeId to remain backwards-compatible.")
-    large_subtypeid = bpy.props.StringProperty( name="Large Block SubtypeId",
+    large_subtypeid: bpy.props.StringProperty( name="Large Block SubtypeId",
         description="Provide the SubtypeId of the large size block or leave empty to use the default naming-scheme")
-    small_subtypeid = bpy.props.StringProperty( name="Small Block SubtypeId",
+    small_subtypeid: bpy.props.StringProperty( name="Small Block SubtypeId",
         description="Provide the SubtypeId of the small size block or leave empty to use the default naming-scheme")
 
-    export_nodes = bpy.props.StringProperty( name="Export Node Tree", default="MwmExportMedieval",
+    export_nodes: bpy.props.StringProperty( name="Export Node Tree", default="MwmExportMedieval",
         description="Use the Node editor to create and change these settings.")
-    export_path = bpy.props.StringProperty( name="Export Subpath", default="//Models", subtype='DIR_PATH',
+    export_path: bpy.props.StringProperty( name="Export Subpath", default="//Models", subtype='DIR_PATH',
         description="The directory this block is to exported to")
 
     # too bad https://developer.blender.org/D113 never made it into Blender
@@ -296,7 +295,7 @@ class DATA_PT_me_scene(bpy.types.Panel):
 
         col = layout.column()
         col.label(text="Block Size")
-        split = col.split(percentage=.45, align=True)
+        split = col.split(factor=.45, align=True)
         split.prop(me, "block_size", text="")
         row = split.row(align=True)
         row.prop(me, "block_dimensions", text="")
@@ -327,7 +326,7 @@ class DATA_PT_me_scene(bpy.types.Panel):
         row = layout.row(align=True)
         row.prop_search(me, "export_nodes", bpy.data, "node_groups", text="Export Settings")
         if not any(nt for nt in bpy.data.node_groups if nt.bl_idname == "MEBlockExportTree"):
-            row.operator("export_scene.medieval_engineers_export_nodes", text="", icon='ZOOMIN')
+            row.operator("export_scene.medieval_engineers_export_nodes", text="", icon='ADD')
 
         layout.separator()
 
@@ -351,7 +350,7 @@ class NODE_PT_me_nodes(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
 
-        layout.label("Export using these settings")
+        layout.label(text="Export using these settings")
         col = layout.column(align=True)
         op = col.operator("export_scene.medieval_engineers_block", text="Export scene as a block", icon="EXPORT")
         op.settings_name = context.space_data.node_tree.name
@@ -359,7 +358,7 @@ class NODE_PT_me_nodes(bpy.types.Panel):
         op.settings_name = context.space_data.node_tree.name
 
         col = layout.column(align=True)
-        col.operator("export_scene.medieval_engineers_export_nodes", text="Add default export-nodes", icon='ZOOMIN')
+        col.operator("export_scene.medieval_engineers_export_nodes", text="Add default export-nodes", icon='ADD')
         col.operator("object.medieval_engineers_layer_names", text="Set Layer Names", icon='COPY_ID')
 
 class NODE_PT_me_nodes_mat(bpy.types.Panel):
@@ -412,13 +411,13 @@ def show_block_bounds():
  
 class MEObjectProperties(bpy.types.PropertyGroup):
     name = PROP_GROUP
-    file = bpy.props.StringProperty(name="Link to File", 
+    file: bpy.props.StringProperty(name="Link to File",
         description="Links this empty to another model file. Only specify the base name, do not include the .mwm extension.")
     # TODO SE supports referencing multiple highlight objects per empty. Which UI widget supports that in Blender?
-    highlight_objects = bpy.props.StringProperty(name="Highlight Mesh",
+    highlight_objects: bpy.props.StringProperty(name="Highlight Mesh",
         description="Link to a mesh-object that gets highlighted instead of this interaction handle "
                     "when the player points at the handle")
-    scaleDown = bpy.props.BoolProperty(name="Scale Down", default=False,
+    scaleDown: bpy.props.BoolProperty(name="Scale Down", default=False,
         description="Should the empty be scaled down when exporting a small block from a large block model?")
 
 _RE_KNOW_VOLUME_HANDLES = re.compile(r"^(dummy_)?(detector_(terminal|conveyor|cockpit))", re.IGNORECASE)
@@ -454,7 +453,7 @@ class DATA_PT_me_empty(bpy.types.Panel):
             layout.separator()
             row = layout.row()
             row.alert = bool(_RE_KNOW_VOLUME_HANDLES.search(ob.name))
-            row.operator('object.me_empty_with_volume', icon='BBOX')
+            row.operator('object.me_empty_with_volume', icon='SHADING_BBOX')
 
 
 # -----------------------------------------  Material Data ----------------------------------------- #
@@ -486,25 +485,25 @@ DX11_TEXTURE_ENUM = [
 class MEMaterialProperties(bpy.types.PropertyGroup):
     name = PROP_GROUP
 
-    nodes_version = bpy.props.IntProperty(default=0, options = {'SKIP_SAVE'})
-    technique = bpy.props.EnumProperty(items=MATERIAL_TECHNIQUES, default='MESH', name="Technique")
+    nodes_version: bpy.props.IntProperty(default=0, options = {'SKIP_SAVE'})
+    technique: bpy.props.EnumProperty(items=MATERIAL_TECHNIQUES, default='MESH', name="Technique")
 
     # the material might be a node material and have no diffuse color, so define our own
-    diffuse_color = bpy.props.FloatVectorProperty( subtype="COLOR", default=(1.0, 1.0, 1.0), min=0.0, max=1.0, name="Diffuse Color", )
-    parallax_height = bpy.props.FloatProperty( min=0.0, name="Parallax Height", description="per material parallax height", precision=4)
-    parallax_back_offset = bpy.props.FloatProperty( min=0.0, name="Parallax Back Offset", description="per material parallax offset", precision=4)
-    wind_scale = bpy.props.FloatProperty( min=0.0, name="Wind Scale", description="per material wind scale", precision=3)
-    wind_frequency = bpy.props.FloatProperty( min=0.0, name="Wind Frequency", description="per material wind frequency", precision=3)
+    diffuse_color: bpy.props.FloatVectorProperty( subtype="COLOR", default=(1.0, 1.0, 1.0), min=0.0, max=1.0, name="Diffuse Color", )
+    parallax_height: bpy.props.FloatProperty( min=0.0, name="Parallax Height", description="per material parallax height", precision=4)
+    parallax_back_offset: bpy.props.FloatProperty( min=0.0, name="Parallax Back Offset", description="per material parallax offset", precision=4)
+    wind_scale: bpy.props.FloatProperty( min=0.0, name="Wind Scale", description="per material wind scale", precision=3)
+    wind_frequency: bpy.props.FloatProperty( min=0.0, name="Wind Frequency", description="per material wind frequency", precision=3)
 
-    glass_material_ccw = bpy.props.StringProperty(
+    glass_material_ccw: bpy.props.StringProperty(
         name="Outward Facing Material", 
         description="The material used on the side of the polygon that is facing away from the block center. Defined in TransparentMaterials.sbc",
     )
-    glass_material_cw = bpy.props.StringProperty(
+    glass_material_cw: bpy.props.StringProperty(
         name="Inward Facing Material", 
         description="The material used on the side of the polygon that is facing towards the block center. Defined in TransparentMaterials.sbc",
     )
-    glass_smooth = bpy.props.BoolProperty(name="Smooth Glass", description="Should the faces of the glass be shaded smooth?")
+    glass_smooth: bpy.props.BoolProperty(name="Smooth Glass", description="Should the faces of the glass be shaded smooth?")
 
 
 class MEMaterialInfo:
@@ -554,7 +553,7 @@ class MEMaterialInfo:
         self.shouldUseNodes = not self.isOldMaterial and not material.use_nodes
 
     def _imagesFromLegacyMaterial(self):
-        for slot in self.material.texture_slots:
+        for slot in self.material.texture_paint_slots:
             # getattr() because sometimes bpy.types.Texture has no attribute image (Blender bug?)
             if slot and getattr(slot, 'texture', None) and getattr(slot.texture, 'image', None):
                 image = slot.texture.image
@@ -637,18 +636,18 @@ class DATA_PT_me_material(bpy.types.Panel):
 
         def image(texType: TextureType):
             if texType in matInfo.textureNodes:
-                split = layout.split(0.25)
-                split.label(texType.name)
+                split = layout.split(factor=0.25)
+                split.label(text=texType.name)
                 split.template_ID(matInfo.textureNodes[texType], 'image', open='image.open')
 
         def msg(msg, icon='INFO', layout=layout, align='CENTER'):
             row = layout.row()
             row.alignment = align
-            row.label(msg, icon=icon)
+            row.label(text=msg, icon=icon)
 
         if matInfo.isOldMaterial:
             layout.separator()
-            layout.operator("material.me_material_setup", "Convert to Nodes Material", icon="RECOVER_AUTO")
+            layout.operator("material.me_material_setup", text="Convert to Nodes Material", icon="RECOVER_LAST")
             return
         elif context.scene.render.engine != 'CYCLES':
             msg("The render engine should be 'Cycles Render'.")
@@ -680,8 +679,8 @@ class DATA_PT_me_material(bpy.types.Panel):
 
         layout.separator()
 
-        split = layout.split(0.25)
-        split.label("Parallax")
+        split = layout.split(factor=0.25)
+        split.label(text="Parallax")
         split = split.split()
         if matInfo.parallaxHeightNode:
             split.column().prop(matInfo.parallaxHeightNode.outputs[0], "default_value", text="Height")
@@ -692,8 +691,8 @@ class DATA_PT_me_material(bpy.types.Panel):
         else:
             split.column().prop(d, "parallax_back_offset", text="Offset")
 
-        split = layout.split(0.25)
-        split.label("Wind")
+        split = layout.split(factor=0.25)
+        split.label(text="Wind")
         split = split.split()
         if matInfo.windScaleNode:
             split.column().prop(matInfo.windScaleNode.outputs[0], "default_value", text="Scale")
@@ -705,37 +704,10 @@ class DATA_PT_me_material(bpy.types.Panel):
             split.column().prop(d, "wind_frequency", text="Frequency")
 
 
-@bpy.app.handlers.persistent
-def syncTextureNodes(dummy):
-    """
-    This handler adresses https://github.com/harag-on-steam/se-blender/issues/6
-    by syncing the image of <TextureType>Texture nodes with <TextureType>2Texture nodes.
-    """
-    for mat in bpy.data.materials:
-        if mat.node_tree and mat.node_tree.is_updated:
-            matInfo = MEMaterialInfo(mat)
-            for t in TextureType:
-                node = matInfo.textureNodes.get(t, None)
-                altNode = matInfo.altTextureNodes.get(t, None)
-                if not node is None and not altNode is None:
-                    if node.image != altNode.image:
-                        altNode.image = node.image
-
-@bpy.app.handlers.persistent
-def upgradeShadersAndMaterials(dummy):
-    shaderTree = getDx11Shader(create=False)
-    if shaderTree is None or len(shaderTree.inputs) == 14:
-        return
-    createDx11ShaderGroup() # recreate
 
 def register():
-    if not syncTextureNodes in bpy.app.handlers.scene_update_pre:
-        bpy.app.handlers.scene_update_pre.append(syncTextureNodes)
-    #if not upgradeShadersAndMaterials in bpy.app.handlers.load_post:
-    #    bpy.app.handlers.load_post.append(upgradeShadersAndMaterials)
+    pass
 
 def unregister():
-    if syncTextureNodes in bpy.app.handlers.scene_update_pre:
-        bpy.app.handlers.scene_update_pre.remove(syncTextureNodes)
-    #if upgradeShadersAndMaterials in bpy.app.handlers.load_post:
-    #    bpy.app.handlers.load_post.remove(upgradeShadersAndMaterials)
+
+    pass
